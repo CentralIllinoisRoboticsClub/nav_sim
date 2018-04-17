@@ -1,0 +1,6 @@
+<launch>
+  <include file="$(find nav_sim)/launch/sim_bot.launch" />
+  <include file="$(find nav_sim)/launch/scan_sim.launch" />
+  <!-- RViz -->
+  <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/nav_sim.rviz" />
+</launch>
