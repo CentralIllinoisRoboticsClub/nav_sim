@@ -4,10 +4,17 @@ clone or download zip to catkin_ws/src/
 
 ## Dependencies
 ```
+sudo apt-get install ros-kinetic-navigation
+sudo apt-get install ros-kinetic-teb-local-planner
 cd ~/catkin_ws/src/
 git clone https://github.com/josephduchesne/light_scan_sim.git
 cd ~/catkin_ws/
 catkin_make
+```
+Potential Future Dependencies:
+```
+sudo apt-get install ros-kinetic-amcl
+sudo apt-get install ros-kinetic-gmapping
 ```
 
 ## Usage
