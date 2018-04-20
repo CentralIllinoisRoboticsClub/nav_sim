@@ -14,4 +14,4 @@ map:
 laser:
   hz: 10  # laser scan frequency
   topic: "/scan"  # The LaserScan topic to publish
-  frame: "/base_link"  # The tf frame that the laser is based in
+  frame: "/laser"  # The tf frame that the laser is based in

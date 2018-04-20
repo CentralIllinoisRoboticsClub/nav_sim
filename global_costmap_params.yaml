@@ -7,7 +7,7 @@ global_costmap:
   rolling_window: false
   transform_tolerance: 2.0
   robot_radius: 0.3
-  inflation_radius: 0.1
+  inflation_radius: 0.4
   width: 80.0
   height: 80.0
   origin_x: -40

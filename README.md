@@ -20,6 +20,9 @@ sudo apt-get install ros-kinetic-gmapping
 ## Usage
 `roslaunch nav_sim nav_sim.launch`
 (A roscore master will automatically start for your first launch file)
+Ignore the following warning for now:
+LightScanSim: Could not find a connection between 'map_image' and 'laser' because they are not part of the same tree.Tf has two or more unconnected trees.
+I do not understand the purpose of map_image.
 
 `roslaunch nav_sim move_base_nav.launch`
 
@@ -38,6 +41,8 @@ base_local_planner.yaml (teb_local_planner is another option to try later)
 costmap_common_params.yaml
 local_costmap_params.yaml
 global_costmap_params.yaml
+
+Increasing the global_costmap inflation radius gives better paths and reduces the chance of getting stuck near obstacles. I recently increased it to 0.4 meters.
 
 These files are used by move_base_nav.launch, which can be restarted separately while leaving your simulation state as is.
 
