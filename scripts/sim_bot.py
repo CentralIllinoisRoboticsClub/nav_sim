@@ -2,7 +2,6 @@
 
 import rospy, math
 import numpy as np
-from wheele_msgs.msg import SpeedCurve
 
 from std_msgs.msg import Int16
 
@@ -29,7 +28,7 @@ class SimBot():
         self.odom_broadcaster = tf.TransformBroadcaster()
         self.prev_time = rospy.Time.now()
         
-        print('Initializing bot simulator.')
+        rospy.loginfo('Initializing bot simulator.')
         
         self.v = 0
         self.w = 0
@@ -154,7 +153,7 @@ class SimBot():
 if __name__ == '__main__':
     try:
         sim_bot = SimBot()
-        print("Starting bot simulator")
+        rospy.loginfo("Starting bot simulator")
 
         r = rospy.Rate(50.0)
         while not rospy.is_shutdown():
@@ -162,4 +161,5 @@ if __name__ == '__main__':
             r.sleep()
             
     except rospy.ROSInterruptException:
+        rospy.logerr("SimBot failed to start")
         pass
