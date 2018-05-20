@@ -35,8 +35,8 @@ class SimBot():
         self.v_cmd = 0
         self.w_cmd = 0
         
-        self.max_accel= 5
-        self.max_w_dot = 3
+        self.max_accel= 2.
+        self.max_w_dot = 2.
         
         self.bot_rad = 0
         self.botx = 0
@@ -48,14 +48,22 @@ class SimBot():
         
         # Turnig Radius limit = 0.5 meters
         MAX_CURVATURE = 2.0
-        if(abs(v) < 0.1 and abs(w) > 0.0):
-            v = 0.5*np.sign(v)
-            if(v == 0.0):
-                v = 0.5
-        elif(abs(v) > 0):
+        #~ if(abs(v) < 0.1 and abs(w) > 0.0):
+            #~ v = 0.5*np.sign(v)
+            #~ if(v == 0.0):
+                #~ v = 0.5
+        #~ elif(abs(v) > 0):
+            #~ curv = w/v
+            #~ if(abs(v) < 0.5):
+                #~ v = np.sign(v)*0.5
+            #~ if(abs(curv) > MAX_CURVATURE):
+                #~ w = np.sign(curv)*v*MAX_CURVATURE
+        if(abs(v) > 0 and abs(v) < 0.3):
             curv = w/v
             if(abs(curv) > MAX_CURVATURE):
-                w = np.sign(curv)*v*MAX_CURVATURE
+                curv = np.sign(curv)*MAX_CURVATURE
+            v = np.sign(v)*0.3
+            #w = curv*v
             
         self.v_cmd = v
         self.w_cmd = w

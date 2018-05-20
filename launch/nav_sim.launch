@@ -1,4 +1,5 @@
 <launch>
+  <include file="$(find nav_sim)/launch/move_base_nav.launch" />
   <include file="$(find nav_sim)/launch/sim_bot.launch" />
   <include file="$(find nav_sim)/launch/scan_sim.launch" />
   <!-- RViz -->
