@@ -2,10 +2,17 @@
 clone or download zip to catkin_ws/src/
 `git clone https://github.com/CentralIllinoisRoboticsClub/nav_sim.git`
 
+We recently tried our own simpler local planner that just tries to follow the global path plan.
+See the test_wheele_local_planner branch in this nav_sim repo.
+remap cmd_vel to something else, and run the wheele_local_planner_sim.py in the updated wheele repo
+
 ## Dependencies
 ```
 sudo apt-get install ros-kinetic-navigation
 sudo apt-get install ros-kinetic-teb-local-planner
+sudo apt-get install ros-kinetic-move-base
+sudo apt-get install ros-kinetic-map-server
+sudo apt-get install ros-kinetic-global-planner
 cd ~/catkin_ws/src/
 git clone https://github.com/josephduchesne/light_scan_sim.git
 cd ~/catkin_ws/
@@ -16,6 +23,7 @@ Potential Future Dependencies:
 sudo apt-get install ros-kinetic-amcl
 sudo apt-get install ros-kinetic-gmapping
 ```
+In general, if you get errors about packages and it is not one of the catkin_ws/src packages, try to install the package
 
 ## Usage
 `roslaunch nav_sim nav_sim.launch`
