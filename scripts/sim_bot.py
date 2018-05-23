@@ -20,13 +20,15 @@ class SimBot():
         
         rospy.Subscriber('cmd_vel', Twist, self.sim_cmd_callback, queue_size=1)
         
-        self.USE_SIMPLE_SCAN_SIM = False
+        self.USE_SIMPLE_SCAN_SIM = True
+        
         if(self.USE_SIMPLE_SCAN_SIM):
-            self.scan_pub = rospy.Publisher('scan', LaserScan, queue_size=50)
+            self.scan_pub = rospy.Publisher('scan2', LaserScan, queue_size=50)
         
         self.odom_pub = rospy.Publisher('odom', Odometry, queue_size=5)
         self.odom_broadcaster = tf.TransformBroadcaster()
         self.prev_time = rospy.Time.now()
+        self.scan_time1 = self.prev_time
         
         rospy.loginfo('Initializing bot simulator.')
         
@@ -124,6 +126,8 @@ class SimBot():
         # LaserScan simulation
         # initially just check point obstacle at 10,0 in odom
         if(self.USE_SIMPLE_SCAN_SIM):
+            #if( (t2 - self.scan_time1).to_sec() > 30.0):
+            #    self.USE_SIMPLE_SCAN_SIM = False
             scan = LaserScan()
             scan.header.frame_id = 'laser'
             scan.range_min = 0.2
@@ -140,7 +144,9 @@ class SimBot():
             scan.ranges = []
             
             obstacle_found = False
-            dx = 10.0 - self.botx
+            dx = 5.0 - self.botx
+            if( (t2 - self.scan_time1).to_sec() > 15.0):
+                dx = 2.0 - self.botx
             dy = 0.0 - self.boty
             theta = math.atan2(dy,dx)
             if(abs(self.bot_rad - theta) < fov/2*3.14/180.0):

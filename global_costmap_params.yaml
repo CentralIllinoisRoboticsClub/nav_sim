@@ -1,15 +1,13 @@
 global_costmap:
-  global_frame: /map
+  global_frame: /odom
   robot_base_frame: /base_link
-  update_frequency: 1.0
-  publish_frequency: 1.0
-  static_map: true
-  rolling_window: false
-  transform_tolerance: 4.0
-  robot_radius: 1.0
-  inflation_radius: 1.0
-  width: 80.0
-  height: 80.0
-  origin_x: -40
-  origin_y: -40
-  resolution: 0.5
+  update_frequency: 10.0
+  publish_frequency: 10.0
+  static_map: false
+  rolling_window: true
+  width: 120.0
+  height: 120.0
+  resolution: 1.0
+  origin_x: 0
+  origin_y: 0
+  transform_tolerance: 2.0

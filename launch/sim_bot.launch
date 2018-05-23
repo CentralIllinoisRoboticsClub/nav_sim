@@ -5,6 +5,6 @@
   <node pkg="nav_sim" type = "sim_bot.py" name = "sim_bot" />
 
   <!-- Run the map server -->
-  <arg name="map_file" default="$(find nav_sim)/config/yard_map_res_0p5m.yaml"/>
+  <arg name="map_file" default="$(find nav_sim)/config/big_run_map1u_clean_append6.yaml"/>
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 </launch>
