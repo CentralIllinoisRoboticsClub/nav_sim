@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rospy, math
+import rospy, math, random
 import numpy as np
 
 from std_msgs.msg import Int16
@@ -42,7 +42,11 @@ class SimBot():
         
         self.bot_rad = 0
         self.botx = 0
-        self.boty = 0    
+        self.boty = 0
+        
+        self.noisy_rad = 0
+        self.noisy_x = 0
+        self.noisy_y = 0    
                 
     def sim_cmd_callback(self, data):
         v = data.linear.x
@@ -82,7 +86,9 @@ class SimBot():
         if(abs(accel) > self.max_accel):
             accel = self.max_accel*mu_v
         
+        v_noisy = self.v + (random.random()-0.5)*0.2
         dmeters = self.v*dt + 0.5*accel*dt**2
+        noisy_dmeters = v_noisy*dt + 0.5*accel*dt**2
         self.v += accel*dt
         
         w_dot = (self.w_cmd - self.w)/dt
@@ -90,7 +96,12 @@ class SimBot():
         if(abs(w_dot) > self.max_w_dot):
             w_dot = self.max_w_dot*mu_w
         
+        if(abs(self.w) > 0 or abs(self.v) > 0):
+            w_noisy = self.w + (random.random()-0.4)*0.01
+        else:
+            w_noisy = self.w
         dtheta = self.w*dt + 0.5*w_dot*dt**2
+        noisy_dtheta = w_noisy*dt + 0.5*w_dot*dt**2
         self.w += w_dot*dt
 
         #update bot position
@@ -99,11 +110,25 @@ class SimBot():
         dy = dmeters*np.sin(self.bot_rad)
         self.botx = self.botx + dx
         self.boty = self.boty + dy
-        
         odom_quat = tf.transformations.quaternion_from_euler(0, 0, self.bot_rad)
+        
+        #update noisy bot position
+        self.noisy_rad = self.noisy_rad + noisy_dtheta
+        self.noisy_x += noisy_dmeters*np.cos(self.noisy_rad)
+        self.noisy_y += noisy_dmeters*np.sin(self.noisy_rad)
+        noisy_quat = tf.transformations.quaternion_from_euler(0, 0, self.noisy_rad)
+        
         self.odom_broadcaster.sendTransform(
         (self.botx, self.boty, 0.),
         odom_quat,
+        t2,
+        "laser_truth",
+        "odom_truth"
+        )
+        
+        self.odom_broadcaster.sendTransform(
+        (self.noisy_x, self.noisy_y, 0.),
+        noisy_quat,
         t2,
         "base_link",
         "odom"
@@ -161,15 +186,14 @@ class SimBot():
             if not obstacle_found:
                 for k in range(nDet):
                     scan.ranges.append(50.0)
-            self.scan_pub.publish(scan)
-        
+            self.scan_pub.publish(scan)        
 
 if __name__ == '__main__':
     try:
         sim_bot = SimBot()
         rospy.loginfo("Starting bot simulator")
 
-        r = rospy.Rate(50.0)
+        r = rospy.Rate(20.0)
         while not rospy.is_shutdown():
             sim_bot.update_odom()
             r.sleep()

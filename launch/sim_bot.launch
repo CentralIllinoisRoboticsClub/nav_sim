@@ -1,8 +1,9 @@
 <launch>
   <node pkg="tf" type="static_transform_publisher" name="base_frame_laser" args="0 0 0 0.0 0 0 /base_link /laser 10" />
-  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="5.0 0 0 0.0 0 0 /map /odom 2" />
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="5.0 0 0 0.0 0 0 /map /odom 2" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom_truth" args="5.0 0 0 0.0 0 0 /map /odom_truth 2" />
   
-  <node pkg="nav_sim" type = "sim_bot.py" name = "sim_bot" />
+  <node pkg="nav_sim" type = "sim_bot.py" name = "sim_bot" output="screen"/>
 
   <!-- Run the map server -->
   <arg name="map_file" default="$(find nav_sim)/config/big_run_map1u_clean_append6.yaml"/>

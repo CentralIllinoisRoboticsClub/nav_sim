@@ -2,6 +2,10 @@
   <include file="$(find nav_sim)/launch/move_base_nav.launch" />
   <include file="$(find nav_sim)/launch/sim_bot.launch" />
   <include file="$(find nav_sim)/launch/scan_sim.launch" />
+  <!--<include file="$(find jeep_2dnav)/launch/jeep_amcl_diff.launch" /> -->
+  <include file="$(find bag_tools)/launch/laser2pc.launch" />
+  <node name="jeep_planner" pkg="jeep_ros_comm" type="jeep_local_planner_sim.py" />
+  <node name="jeep_icp" pkg="jeep_2dnav" type="jeep_icp_segs.py" output="screen"/>
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/nav_sim.rviz" />
 </launch>
