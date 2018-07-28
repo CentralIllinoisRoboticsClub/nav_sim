@@ -100,6 +100,8 @@ Visualization Manager:
           Value: true
         map_image:
           Value: false
+        noise_laser:
+          Value: true
         odom:
           Value: true
       Marker Scale: 5
@@ -114,6 +116,8 @@ Visualization Manager:
           odom:
             base_link:
               laser:
+                {}
+              noise_laser:
                 {}
       Update Interval: 0
       Value: true
@@ -246,7 +250,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.300000012
       Style: Flat Squares
-      Topic: /scan2
+      Topic: /noise_scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

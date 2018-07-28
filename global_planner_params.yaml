@@ -1,6 +1,6 @@
 GlobalPlanner:
-  use_dijkstra: true #dijkstra or astar
-  use_grid_path: false #seems required that this is opposite of use_dijkstra??
+  use_dijkstra: false #dijkstra or astar
+  use_grid_path: true #seems required that this is opposite of use_dijkstra??
   cost_factor: 0.55
   neutral_cost: 5 #66
   lethal_cost: 200
