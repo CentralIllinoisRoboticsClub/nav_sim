@@ -6,6 +6,7 @@
   <include file="$(find bag_tools)/launch/laser2pc.launch" />
   <node name="jeep_planner" pkg="jeep_ros_comm" type="jeep_local_planner_sim.py" />
   <node name="jeep_icp" pkg="jeep_2dnav" type="jeep_icp_segs.py" output="screen"/>
+  <!-- <node name="mow_path" pkg="jeep_2dnav" type="mow_path.py" output="screen"/> -->
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/nav_sim.rviz" />
 </launch>
