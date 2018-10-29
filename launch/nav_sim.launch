@@ -1,6 +1,8 @@
 <launch>
+  <include file="$(find nav_sim)/launch/move_base_nav.launch" />
   <include file="$(find nav_sim)/launch/sim_bot.launch" />
   <include file="$(find nav_sim)/launch/scan_sim.launch" />
+  <node name="wheele_planner" pkg="ros_vehicle_model" type="wheele_local_planner_sim.py" />
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/nav_sim.rviz" />
 </launch>
