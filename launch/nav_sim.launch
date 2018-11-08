@@ -2,15 +2,18 @@
   <!-- <include file="$(find nav_sim)/launch/move_base_nav.launch" /> -->
   <include file="$(find nav_sim)/launch/sim_bot.launch" />
   <include file="$(find nav_sim)/launch/scan_sim.launch" />
+  
+  <!--
   <node name="wheele_planner" pkg="ros_vehicle_model" type="wheele_local_planner_sim.py" >
     <remap from="/move_base/GlobalPlanner/plan" to="path" />
   </node>
+  -->
 
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/view_costmap.rviz" />
 
   <node pkg="avoid_obstacles" type="avoid_obs" name="avoid_obs" output="screen">
-    <param name="plan_rate_hz" value="1.0" />
+    <param name="plan_rate_hz" value="10.0" />
     <param name="map_res_m" value="1.0" />
     <param name="map_size" value="150" />
     <param name="max_range" value="40.0" />
