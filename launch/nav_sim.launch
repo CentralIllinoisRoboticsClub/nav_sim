@@ -8,6 +8,7 @@
     <remap from="/move_base/GlobalPlanner/plan" to="path" />
   </node>
   -->
+  
 
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/view_costmap.rviz" />
@@ -18,5 +19,7 @@
     <param name="map_size" value="150" />
     <param name="max_range" value="40.0" />
     <param name="plan_range" value="35.0" />
+    <param name="clear_decrement" value="-5" />
+    <param name="fill_increment" value="10" />
   </node>
 </launch>

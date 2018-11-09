@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /LaserScan21
-        - /Path1
+        - /Map2
+        - /pfObs1
       Splitter Ratio: 0.5
     Tree Height: 751
   - Class: rviz/Selection
@@ -94,17 +95,15 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        abs_gps:
-          Value: true
         base_link:
-          Value: true
-        base_link_gps:
           Value: true
         laser:
           Value: true
         map:
           Value: true
-        map0:
+        map_image:
+          Value: true
+        noise_laser:
           Value: true
         odom:
           Value: true
@@ -114,16 +113,15 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        map0:
-          map:
-            abs_gps:
-              {}
-            base_link_gps:
-              {}
-        odom:
-          base_link:
-            laser:
-              {}
+        map:
+          map_image:
+            {}
+          odom:
+            base_link:
+              laser:
+                {}
+              noise_laser:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.699999988
@@ -263,7 +261,7 @@ Visualization Manager:
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: map
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
       Name: Map
       Topic: /costmap
@@ -292,6 +290,16 @@ Visualization Manager:
       Shaft Length: 0.100000001
       Topic: /path
       Unreliable: false
+      Value: true
+    - Alpha: 0.699999988
+      Class: rviz/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: pfObs
+      Topic: /pfObs
+      Unreliable: false
+      Use Timestamp: false
       Value: true
   Enabled: true
   Global Options:
@@ -325,9 +333,9 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.9689374
-        Y: -15.5864458
-        Z: -1.43348157
+        X: 5.87731791
+        Y: 15.3903599
+        Z: -0.782864273
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
