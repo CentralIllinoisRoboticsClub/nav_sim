@@ -10,25 +10,40 @@
     <rosparam>
       plan_rate_hz: 10.0
       use_PotFields: false
-      close_cone_to_bot_dist: 6.0
-      valid_cone_to_wp_dist: 1.0
+      close_cone_to_bot_dist: 11.0
+      valid_cone_to_wp_dist: 11.0
       near_path_dist: 1.0
-      desired_speed: 0.6
-      slow_speed: 0.3
-      max_omega: 1.0
-      max_fwd_heading_error_deg: 90.0
-      search_time: 1.0
-      reverse_time: 2.0
+      valid_end_of_path_dist: 5.0
+      desired_speed: 1.0
+      slow_speed: 0.4
+      max_omega: 2.0
+      max_fwd_heading_error_deg: 180.0
+      search_time: 2.0
+      search_omega: 0.8
+      reverse_time: 1.0
       cmd_control_ver: 0
-      scan_collision_db_limit: 3
+      scan_collision_db_limit: 4
+      scan_collision_range: 0.5
+      cone_detect_db_limit: 1
+      cmd_speed_filter_factor: 0.5
+      report_bumped_obstacles: true
+      max_camera_search_time: 30.0
+      slow_approach_distance: 2.0
+      reverse_speed: 0.8
+      bump_db_limit: 2
+      path_step_size: 3
+
+      waypoints_are_in_map_frame: false
     </rosparam>
 
     <rosparam param="x_coords">[16.0, 0.0, 6.0]</rosparam>
     <rosparam param="y_coords">[8.0,  8.0, 0.0]</rosparam>
+    <rosparam param="waypoint_types">[0, 0, 0]</rosparam>
+    <rosparam param="hill_waypoint_list">[0, 0, 0]</rosparam>
   </node>
 
   <!-- RViz -->
   <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/view_costmap.rviz" />
 
-  <include file="$(find avoid_obstacles)/launch/avoid_obstacles.launch" />
+  <include file="$(find nav_sim)/launch/sim_avoid_obstacles.launch" />
 </launch>

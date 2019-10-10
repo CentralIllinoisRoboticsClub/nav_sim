@@ -1,0 +1,29 @@
+<launch>
+  <node pkg="avoid_obstacles" type="avoid_obs" name="avoid_obs" output="screen">
+    <param name="plan_rate_hz" value="1.0" />
+    <param name="map_res_m" value="0.5" />
+    <param name="map_size" value="301" />
+    <param name="max_range" value="40.0" />
+    <param name="min_hill_range" value="1.0" />
+    <param name="plan_range" value="35.0" />
+    <param name="clear_decrement" value="-5" />
+    <param name="fill_increment" value="20" />
+    <param name="adjacent_cost_offset" value="2.0" />
+    <param name="adjacent_cost_slope" value="2.0" />
+    <param name="inflation_factor" value="2" />
+    <param name="reinflate_cost_thresh" value="30" />
+    <param name="reinflate_radius" value="5.0" />
+    <param name="use_PotFields" value="false" />
+    <param name="cone_search_radius" value="1.0" />
+    <param name="cone_obs_thresh" value="0" />
+    <param name="max_num_known_obstacles" value="30" />
+    <param name="known_obstacle_time_limit" value="30.0" />
+  </node>
+  <node pkg="avoid_obstacles" type="astar" name="astar" output="screen">
+    <param name="plan_rate_hz" value="5.0" />
+    <param name="obs_thresh" value="30" />
+    <param name="obs_weight" value="0.1" />
+    <param name="max_plan_time_sec" value="3.0" />
+    <remap from="wp_goal" to="move_base_simple/goal" />
+  </node>
+</launch>
