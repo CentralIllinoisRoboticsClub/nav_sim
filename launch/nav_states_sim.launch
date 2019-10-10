@@ -1,0 +1,34 @@
+<launch>
+  <!-- <include file="$(find nav_sim)/launch/move_base_nav.launch" /> -->
+  <include file="$(find nav_sim)/launch/sim_bot.launch" />
+  <include file="$(find nav_sim)/launch/scan_sim.launch" />
+  
+  <node pkg="avoid_obstacles" type="nav_states" name="nav_states" output="screen">
+    <remap from="/cam_cone_pose" to="/raw_cone_pose"/>
+    <!-- <param name="cmd_control_ver" value="1" type="int"/> -->
+    <!-- <param name="plan_rate_hz" value="10.0"/> -->
+    <rosparam>
+      plan_rate_hz: 10.0
+      use_PotFields: false
+      close_cone_to_bot_dist: 6.0
+      valid_cone_to_wp_dist: 1.0
+      near_path_dist: 1.0
+      desired_speed: 0.6
+      slow_speed: 0.3
+      max_omega: 1.0
+      max_fwd_heading_error_deg: 90.0
+      search_time: 1.0
+      reverse_time: 2.0
+      cmd_control_ver: 0
+      scan_collision_db_limit: 3
+    </rosparam>
+
+    <rosparam param="x_coords">[16.0, 0.0, 6.0]</rosparam>
+    <rosparam param="y_coords">[8.0,  8.0, 0.0]</rosparam>
+  </node>
+
+  <!-- RViz -->
+  <node name="visualisation" pkg="rviz" type="rviz" args="-d $(find nav_sim)/config/view_costmap.rviz" />
+
+  <include file="$(find avoid_obstacles)/launch/avoid_obstacles.launch" />
+</launch>
