@@ -16,6 +16,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <std_msgs/msg/int16.hpp>
 #include <string>
+#include <memory>
 //#include <std_msgs/String.h>
 
 class NavStates: public rclcpp::Node
@@ -28,14 +29,14 @@ public:
   void update_states();
 
 private:
-  void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr& scan);
-  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr& odom);
-  void clickedGoalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& data);
-  void camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& cone_pose_in);
-  void obsConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& obs_cone_pose_in);
-  void bumpCallback(const std_msgs::msg::Int16::SharedPtr& data);
-  void pathCallback(const nav_msgs::msg::Path::SharedPtr& path_in);
-  void mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr& data);
+  void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
+  void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
+  void clickedGoalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data);
+  void camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr cone_pose_in);
+  void obsConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr obs_cone_pose_in);
+  void bumpCallback(const std_msgs::msg::Int16::SharedPtr data);
+  void pathCallback(const nav_msgs::msg::Path::SharedPtr path_in);
+  void mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr data);
 
   void update_plan();
   bool check_for_cone_obstacle();
@@ -62,16 +63,24 @@ private:
   void update_target();
   void update_target(geometry_msgs::msg::PoseStamped target_pose);
 
-  std::shared_ptr<rclcpp::Publisher> cmd_pub_, wp_goal_pub_, wp_cone_pub_, wp_static_map_goal_pub_;
-  std::shared_ptr<rclcpp::Publisher> nav_state_pub_;
-  std::shared_ptr<rclcpp::Publisher> known_obs_pub_;
-  std::shared_ptr<rclcpp::Publisher> hill_wp_pub_;
-  std::shared_ptr<rclcpp::Publisher> valid_bump_pub_;
-
-  std::shared_ptr<rclcpp::Subscription> scan_sub_, odom_sub_, clicked_goal_sub_, path_sub_;
-  std::shared_ptr<rclcpp::Subscription> cam_cone_pose_sub_, laser_cone_pose_sub_, bump_sub_;
-  std::shared_ptr<rclcpp::Subscription> obs_cone_sub_;
-  std::shared_ptr<rclcpp::Subscription> map_to_odom_update_sub_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist> > cmd_pub_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > wp_goal_pub_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > wp_cone_pub_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > wp_static_map_goal_pub_;
+  std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > nav_state_pub_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > known_obs_pub_;
+  std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > hill_wp_pub_;
+  std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > valid_bump_pub_;
+  
+  std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan> > scan_sub_;
+  std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry> > odom_sub_;
+  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > clicked_goal_sub_;
+  std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Path> > path_sub_;
+  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > cam_cone_pose_sub_;
+  //std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > laser_cone_pose_sub_;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > bump_sub_;
+  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > obs_cone_sub_;
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > map_to_odom_update_sub_;
 
   geometry_msgs::msg::PoseStamped bot_pose, map_goal_pose, odom_goal_pose;
   geometry_msgs::msg::PoseStamped camera_cone_pose, obs_cone_pose, camera_cone_pose_in_map;
@@ -103,6 +112,8 @@ private:
   rclcpp::Time state_start_time;
   rclcpp::Time m_bump_time;
   rclcpp::Time m_init_search_time;
+  
+  rclcpp::TimerBase::SharedPtr timer_;
 
   //parameters
   struct Parameters
@@ -133,10 +144,10 @@ private:
     //int min_new_path_size;
   }params;
 
-  std::vector<double> x_coords;
-  std::vector<double> y_coords;
-  std::vector<int> waypoint_type_list;
-  std::vector<int> hill_wp_list;
+  std::vector<double> x_coords{16.0, 0.0, 6.0};
+  std::vector<double> y_coords{8.0,  8.0, 0.0};
+  std::vector<int64_t> waypoint_type_list{0,0,0};
+  std::vector<int64_t> hill_wp_list{0,0,0};
   bool waypoints_are_in_map_frame;
   bool sim_mode;
 

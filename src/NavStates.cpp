@@ -1,6 +1,6 @@
 // Copyright 2019 coderkarl. Subject to the BSD license.
 
-#include "avoid_obstacles/NavStates.h"
+#include "nav_sim/NavStates.h"
 //#include "avoid_obstacles/AvoidObsCommon.h" // get_yaw()
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <math.h>
@@ -22,6 +22,8 @@
 
 #define WP_TYPE_INTER 0
 #define WP_TYPE_CONE 1
+
+using std::placeholders::_1;
 
 //Constructor
 NavStates::NavStates(const rclcpp::NodeOptions& node_options) :
@@ -62,45 +64,57 @@ m_close_to_obs(false)
   valid_bump_pub_ = create_publisher<std_msgs::msg::Int16>("valid_bump",1);
 
   //Topic you want to subscribe
-  scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", 50, &NavStates::scanCallback, this); //receive laser scan
-  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, &NavStates::odomCallback, this);
-  clicked_goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("/move_base_simple/goal", 1, &NavStates::clickedGoalCallback, this);
-  cam_cone_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("cam_cone_pose", 1, &NavStates::camConeCallback, this);
-  obs_cone_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("obs_cone_pose", 1, &NavStates::obsConeCallback, this);
-  bump_sub_ = create_subscription<std_msgs::msg::Int16>("bump_switch",1, &NavStates::bumpCallback, this);
-  path_sub_ = create_subscription<nav_msgs::msg::Path>("path",5, &NavStates::pathCallback, this);
-  map_to_odom_update_sub_ = create_subscription<std_msgs::msg::Int16>("map_to_odom_update", 1, &NavStates::mapToOdomUpdateCallback, this);
-  nh_p  = ros::NodeHandle("~");
-  nh_p.param("plan_rate_hz", params.plan_rate, 10.0);
-  nh_p.param("use_PotFields", params.use_PotFields, false);
-  nh_p.param("valid_cone_to_wp_dist", params.valid_cone_to_wp_dist, 1.0);
-  nh_p.param("near_path_dist", params.near_path_dist, 1.0);
-  nh_p.param("valid_end_of_path_dist", params.valid_end_of_path_dist, 5.0);
-  nh_p.param("desired_speed", params.desired_speed, 0.6);
-  nh_p.param("slow_speed", params.slow_speed, 0.3);
-  nh_p.param("max_omega", params.max_omega, 0.5);
-  nh_p.param("max_fwd_heading_error_deg", params.max_fwd_heading_error_deg, 90.0);
-  nh_p.param("search_time", params.search_time, 1.0);
-  nh_p.param("search_omega", params.search_omega, 0.1);
-  nh_p.param("reverse_time", params.reverse_time, 2.0);
-  nh_p.param("cmd_control_ver", params.cmd_control_ver, 0);
-  nh_p.param("scan_collision_db_limit", params.scan_collision_db_limit, 2);
-  nh_p.param("scan_collision_range", params.scan_collision_range, 0.5);
-  nh_p.param("cone_detect_db_limit", params.cone_detect_db_limit, 2);
-  nh_p.param("cmd_speed_filter_factor", params.cmd_speed_filter_factor, 0.5);
-  nh_p.param("report_bumped_obstacles", params.report_bumped_obstacles, false);
-  nh_p.param("max_camera_search_time", params.max_camera_search_time, 7.0);
-  nh_p.param("slow_approach_distance", params.slow_approach_distance, 1.0);
-  nh_p.param("reverse_speed", params.reverse_speed, 0.8);
-  nh_p.param("bump_db_limit", params.bump_db_limit, 2);
-  nh_p.param("path_step_size", params.path_step_size, 3);
+  scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", 50, std::bind(&NavStates::scanCallback, this, _1)); //receive laser scan
+  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&NavStates::odomCallback, this, _1));
+  clicked_goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("/move_base_simple/goal", 1, std::bind(&NavStates::clickedGoalCallback, this, _1));
+  cam_cone_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("cam_cone_pose", 1, std::bind(&NavStates::camConeCallback, this, _1));
+  obs_cone_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("obs_cone_pose", 1, std::bind(&NavStates::obsConeCallback, this, _1));
+  bump_sub_ = create_subscription<std_msgs::msg::Int16>("bump_switch",1, std::bind(&NavStates::bumpCallback, this, _1));
+  path_sub_ = create_subscription<nav_msgs::msg::Path>("path",5, std::bind(&NavStates::pathCallback, this, _1));
+  map_to_odom_update_sub_ = create_subscription<std_msgs::msg::Int16>("map_to_odom_update", 1, std::bind(&NavStates::mapToOdomUpdateCallback, this, _1));
+  
 
-  nh_p.param("x_coords", x_coords, x_coords);
-  nh_p.param("y_coords", y_coords, y_coords);
-  nh_p.param("waypoint_types", waypoint_type_list, waypoint_type_list);
-  nh_p.param("hill_waypoint_list", hill_wp_list, hill_wp_list);
-  nh_p.param("waypoints_are_in_map_frame", waypoints_are_in_map_frame, true);
-  nh_p.param("sim_mode", sim_mode, false);
+  params.plan_rate = declare_parameter("plan_rate_hz", 10.0);
+  params.use_PotFields = declare_parameter("use_PotFields", false);
+  params.valid_cone_to_wp_dist = declare_parameter("valid_cone_to_wp_dist", 1.0);
+  params.near_path_dist = declare_parameter("near_path_dist", 1.0);
+  params.valid_end_of_path_dist = declare_parameter("valid_end_of_path_dist", 5.0);
+  params.desired_speed = declare_parameter("desired_speed", 0.6);
+  params.slow_speed = declare_parameter("slow_speed", 0.3);
+  params.max_omega = declare_parameter("max_omega", 0.5);
+  params.max_fwd_heading_error_deg = declare_parameter("max_fwd_heading_error_deg", 90.0);
+  params.search_time = declare_parameter("search_time",  1.0);
+  params.search_omega = declare_parameter("search_omega",  0.1);
+  params.reverse_time = declare_parameter("reverse_time",  2.0);
+  params.cmd_control_ver = declare_parameter("cmd_control_ver",  0);
+  params.scan_collision_db_limit = declare_parameter("scan_collision_db_limit",  2);
+  params.scan_collision_range = declare_parameter("scan_collision_range",  0.5);
+  params.cone_detect_db_limit = declare_parameter("cone_detect_db_limit",  2);
+  params.cmd_speed_filter_factor = declare_parameter("cmd_speed_filter_factor",  0.5);
+  params.report_bumped_obstacles = declare_parameter("report_bumped_obstacles",  false);
+  params.max_camera_search_time = declare_parameter("max_camera_search_time",  7.0);
+  params.slow_approach_distance = declare_parameter("slow_approach_distance",  1.0);
+  params.reverse_speed = declare_parameter("reverse_speed",  0.8);
+  params.bump_db_limit = declare_parameter("bump_db_limit",  2);
+  params.path_step_size = declare_parameter("path_step_size",  3);
+
+  /*
+  x_coords = declare_parameter("x_coords"); //.as_double_array();
+  //x_coords = declare_parameter<std::vector<double> >("x_coords");
+  //y_coords = declare_parameter<std::vector<double> >("y_coords");
+  declare_parameter("y_coords");
+  y_coords = get_parameter("y_coords").as_double_array();
+  
+  declare_parameter("waypoint_types");
+  waypoint_type_list = get_parameter("waypoint_types").as_integer_array();
+  declare_parameter("hill_waypoint_list");
+  hill_wp_list = get_parameter("hill_waypoint_list").as_integer_array();
+  //waypoint_type_list =  declare_parameter<std::vector<int64_t> >("waypoint_types");
+  //hill_wp_list = declare_parameter<std::vector<int64_t> >("hill_waypoint_list");
+  */
+  
+  waypoints_are_in_map_frame = declare_parameter("waypoints_are_in_map_frame", true);
+  sim_mode = declare_parameter("sim_mode", false);
 
   //listener.setExtrapolationLimit(ros::Duration(0.1));
   //listener.waitForTransform("laser", "odom", rclcpp::Time(0), ros::Duration(10.0)); //TODO: rclcpp::Time(0) or ::now() ??
@@ -140,41 +154,42 @@ m_close_to_obs(false)
 
   state_init();
 
-  ROS_INFO("Initialized Navigation State Manager");
+  RCLCPP_INFO(get_logger(), "Initialized Navigation State Manager");
+  
+  //std::chrono::milliseconds period_msec = (int)(1000.0/get_plan_rate());
+  //timer_ = rclcpp::create_wall_timer(std::chrono::milliseconds, std::bind(&NavStates::update_states, this) );
 }
-
-NavStates::~NavStates(){}
 
 void NavStates::update_waypoint()
 {
   m_first_search = true; // used to reset the m_init_search_time in search_in_place state
-  map_goal_pose.header.stamp = rclcpp::Time::now();
+  map_goal_pose.header.stamp = now();
   m_current_waypoint_type = waypoint_type_list[m_index_wp];
   m_current_hill_type = hill_wp_list[m_index_wp];
   map_goal_pose.pose.position.x = m_waypoints[m_index_wp].x;
   map_goal_pose.pose.position.y = m_waypoints[m_index_wp].y;
   camera_cone_pose_in_map = map_goal_pose;
-  ROS_INFO("Update Waypoint");
-  ROS_INFO("map x,y = %0.1f, %0.1f",map_goal_pose.pose.position.x, map_goal_pose.pose.position.y);
-  wp_static_map_goal_pub_.publish(map_goal_pose);
+  RCLCPP_INFO(get_logger(), "Update Waypoint");
+  RCLCPP_INFO(get_logger(), "map x,y = %0.1f, %0.1f",map_goal_pose.pose.position.x, map_goal_pose.pose.position.y);
+  wp_static_map_goal_pub_->publish(map_goal_pose);
   geometry_msgs::msg::PoseStamped odom_pose;
   odom_pose.header.frame_id = "odom";
   if(getPoseInFrame(map_goal_pose, "odom", odom_pose))
   {
     odom_goal_pose = odom_pose;
-    ROS_INFO("odom x,y = %0.1f, %0.1f",odom_goal_pose.pose.position.x, odom_goal_pose.pose.position.y);
+    RCLCPP_INFO(get_logger(), "odom x,y = %0.1f, %0.1f",odom_goal_pose.pose.position.x, odom_goal_pose.pose.position.y);
     ++m_index_wp;
     if(m_index_wp == m_num_waypoints)
     {
       m_index_wp = 0;
     }
-    wp_goal_pub_.publish(odom_goal_pose);
+    wp_goal_pub_->publish(odom_goal_pose);
     if(m_current_waypoint_type == WP_TYPE_CONE)
     {
       camera_cone_pose = odom_goal_pose;
-      wp_cone_pub_.publish(camera_cone_pose); // publish this once to avoid obs so it will clear the costmap at the initial goal, until it finds an updated goal from the camera
+      wp_cone_pub_->publish(camera_cone_pose); // publish this once to avoid obs so it will clear the costmap at the initial goal, until it finds an updated goal from the camera
     }
-    ROS_INFO("wp_goal published");
+    RCLCPP_INFO(get_logger(), "wp_goal published");
     m_init_wp_published = true;
     m_path_received = false; //avoid updating waypoint again if Astar has not yet responded to the just updated waypoint
     m_obs_cone_received = false;
@@ -187,24 +202,24 @@ void NavStates::update_waypoint()
 //  This will continue to be called until the getPoseinFrame is successful after a triggered refresh
 void NavStates::refresh_odom_goal()
 {
-  //camera_cone_pose_in_map.header.stamp = rclcpp::Time::now(); // Moved to the mapToOdomUpdateCallback
+  //camera_cone_pose_in_map.header.stamp = now(); // Moved to the mapToOdomUpdateCallback
   geometry_msgs::msg::PoseStamped odom_pose;
   odom_pose.header.frame_id = "odom";
   if(getPoseInFrame(camera_cone_pose_in_map, "odom", odom_pose))
   {
     odom_goal_pose = odom_pose;
 
-    wp_goal_pub_.publish(odom_goal_pose);
+    wp_goal_pub_->publish(odom_goal_pose);
     if(m_current_waypoint_type == WP_TYPE_CONE)
     {
       camera_cone_pose = odom_goal_pose;
-      wp_cone_pub_.publish(camera_cone_pose); // publish this once to avoid obs so it will clear the costmap at the initial goal, until it finds an updated goal from the camera
+      wp_cone_pub_->publish(camera_cone_pose); // publish this once to avoid obs so it will clear the costmap at the initial goal, until it finds an updated goal from the camera
     }
     m_odom_goal_refresh_needed = false;
   }
 }
 
-void NavStates::pathCallback(const nav_msgs::msg::Path::SharedPtr& path_in)
+void NavStates::pathCallback(const nav_msgs::msg::Path::SharedPtr path_in)
 {
   // Verify m_path_received does not become true between update_waypoint() setting m_init_wp_published true and Astar publishing a new path to the old waypoint
   unsigned path_size = path_in->poses.size();
@@ -221,7 +236,7 @@ void NavStates::pathCallback(const nav_msgs::msg::Path::SharedPtr& path_in)
 
 }
 
-void NavStates::camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& cone_pose_in)
+void NavStates::camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr cone_pose_in)
 {
   // TODO: If state = search in place, set a boolean for search in place to move to state = STOP_AND_SEARCH
   //   we also want to do this from the track path state if we are near the end of path
@@ -237,15 +252,15 @@ void NavStates::camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     {
       cone_in_map.header.frame_id = "odom";
     }
-    if(getPoseInFrame(cone_pose_in, cone_in_map.header.frame_id, cone_in_map))
+    if(getPoseInFrame(*cone_pose_in, cone_in_map.header.frame_id, cone_in_map))
     {
       double dist = distance_between_poses(cone_in_map, map_goal_pose);
-      ROS_INFO("camConeCallback, dist btwn cone and goal in map = %0.1f",dist);
+      RCLCPP_INFO(get_logger(), "camConeCallback, dist btwn cone and goal in map = %0.1f",dist);
       if(dist < params.valid_cone_to_wp_dist)
       {
         geometry_msgs::msg::PoseStamped cone_in_odom;
         cone_in_odom.header.frame_id = "odom";
-        if(getPoseInFrame(cone_pose_in, "odom", cone_in_odom) )
+        if(getPoseInFrame(*cone_pose_in, "odom", cone_in_odom) )
         {
           ++m_cone_detect_db_count;
           // TODO: Consider still checking bot to cone distance even though cone_finder also checks this
@@ -253,10 +268,10 @@ void NavStates::camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
           {
             camera_cone_pose_in_map = cone_in_map;
             camera_cone_pose = cone_in_odom;
-            wp_cone_pub_.publish(camera_cone_pose);
+            wp_cone_pub_->publish(camera_cone_pose);
             m_cone_detect_db_count = params.cone_detect_db_limit;
             m_cone_detected = true;
-            ROS_INFO("cone detected");
+            RCLCPP_INFO(get_logger(), "cone detected");
           }
         }
         else if(m_cone_detect_db_count > 0)
@@ -268,7 +283,7 @@ void NavStates::camConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
   }
 }
 
-void NavStates::obsConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& obs_cone_pose_in)
+void NavStates::obsConeCallback(const geometry_msgs::msg::PoseStamped::SharedPtr obs_cone_pose_in)
 {
   obs_cone_pose = *obs_cone_pose_in;
   m_obs_cone_received = true;
@@ -281,16 +296,18 @@ double NavStates::distance_between_poses(const geometry_msgs::msg::PoseStamped& 
   return sqrt(dx*dx + dy*dy);
 }
 
-bool NavStates::getPoseInFrame(const geometry_msgs::msg::PoseStamped::SharedPtr& pose_in, std::string target_frame,
+bool NavStates::getPoseInFrame(const geometry_msgs::msg::PoseStamped& pose_in, std::string target_frame,
     geometry_msgs::msg::PoseStamped& pose_out)
 {
+  (void)target_frame;
+  (void)pose_out;
   // *********** tf LESSONS LEARNED ****************
   // waitForTrasform req_time = timestamp of the pose we are transforming
-  //   do NOT use rclcpp::Time(0) or rclcpp::Time::now()
+  //   do NOT use rclcpp::Time(0) or now()
   //   TODO: Compare to AvoidObs::scanCallback()
 
-  //pose_in.header.stamp = rclcpp::Time::now(); //TODO: does this help or hurt?
-  rclcpp::Time req_time = pose_in->header.stamp; // - ros::Duration(0.1);
+  //pose_in.header.stamp = now(); //TODO: does this help or hurt?
+  rclcpp::Time req_time = pose_in.header.stamp; // - ros::Duration(0.1);
   //pose_out.header.stamp = req_time;
   //TODO: rclcpp::Time(0) or ::now() or pose_in stamp ?? CHECK IF pose_in stamp is set to recent outside of this function
   /*listener.waitForTransform(target_frame, pose_in.header.frame_id, req_time, ros::Duration(10.0));
@@ -301,14 +318,14 @@ bool NavStates::getPoseInFrame(const geometry_msgs::msg::PoseStamped::SharedPtr&
   }
   catch (tf::TransformException& ex)
   {
-    ROS_ERROR("NavStates getPose Received an exception trying to transform a pose : %s", ex.what());
+    RCLCPP_ERROR("NavStates getPose Received an exception trying to transform a pose : %s", ex.what());
     return false;
 
   }*/
   return true;
 }
 
-void NavStates::bumpCallback(const std_msgs::msg::Int16::SharedPtr& msg)
+void NavStates::bumpCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
   m_bump_switch = msg->data;
   m_bump_count += m_bump_switch;
@@ -332,22 +349,22 @@ void NavStates::bumpCallback(const std_msgs::msg::Int16::SharedPtr& msg)
     //       Check for duplicate known obstacles in the deque, store them with low resolution so very close obstacles are considered duplicates
     //       Store the unique costmap index number of known obstacles and use that to check for duplicates
     // Known obstacle pose should be published in the odom frame for AvoidObs costmap
-    if( (rclcpp::Time::now()-m_bump_time).toSec() > params.reverse_time)
+    if( (now()-m_bump_time).seconds() > params.reverse_time)
     {
-      known_obs_pub_.publish(bot_pose);
-      m_bump_time = rclcpp::Time::now();
+      known_obs_pub_->publish(bot_pose);
+      m_bump_time = now();
     }
 
   }
   std_msgs::msg::Int16 valid_bump_msg;
   valid_bump_msg.data = m_valid_bump;
-  valid_bump_pub_.publish(valid_bump_msg);
+  valid_bump_pub_->publish(valid_bump_msg);
 }
 
-void NavStates::mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr& msg)
+void NavStates::mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
   m_odom_goal_refresh_needed = true;
-  camera_cone_pose_in_map.header.stamp = rclcpp::Time::now();
+  camera_cone_pose_in_map.header.stamp = now();
 }
 
 double NavStates::get_plan_rate()
@@ -355,7 +372,7 @@ double NavStates::get_plan_rate()
   return params.plan_rate;
 }
 
-void NavStates::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& odom)
+void NavStates::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
 {
   bot_pose.header.stamp = odom->header.stamp;
   bot_pose.pose.position = odom->pose.pose.position;
@@ -364,19 +381,19 @@ void NavStates::odomCallback(const nav_msgs::msg::Odometry::SharedPtr& odom)
   m_odom_received = true;
 }
 
-void NavStates::clickedGoalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr& data)
+void NavStates::clickedGoalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data)
 {
   geometry_msgs::msg::PoseStamped odomPose;
   odomPose.header.frame_id = "odom";
-  if(getPoseInFrame(data,"odom",odomPose))
+  if(getPoseInFrame(*data,"odom",odomPose))
   {
     odom_goal_pose = odomPose;
-    wp_goal_pub_.publish(odom_goal_pose);
-    ROS_INFO("Updated wp_goal via clicked point");
+    wp_goal_pub_->publish(odom_goal_pose);
+    RCLCPP_INFO(get_logger(), "Updated wp_goal via clicked point");
   }
 }
 
-void NavStates::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr& scan) //use a point cloud instead, use laser2pc.launch
+void NavStates::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) //use a point cloud instead, use laser2pc.launch
 {
   m_collision = false;
   unsigned close_count = 0;
@@ -470,16 +487,16 @@ void NavStates::commandTo(const geometry_msgs::msg::PoseStamped& goal)
     m_speed = -params.reverse_speed; //-m_speed
   }
 
-  //ROS_INFO("des_yaw, bot_yaw, omega: %0.1f, %0.1f, %0.1f",des_yaw*180/M_PI, bot_yaw*180/M_PI, m_omega);
+  //RCLCPP_INFO(get_logger(), "des_yaw, bot_yaw, omega: %0.1f, %0.1f, %0.1f",des_yaw*180/M_PI, bot_yaw*180/M_PI, m_omega);
 }
 
 void NavStates::state_init()
 {
-  state_start_time = rclcpp::Time::now();
+  state_start_time = now();
 }
 double NavStates::get_time_in_state()
 {
-  return (rclcpp::Time::now() - state_start_time).toSec();
+  return (now() - state_start_time).seconds();
 }
 
 void NavStates::track_path()
@@ -491,7 +508,7 @@ void NavStates::track_path()
 
   if(!(m_odom_received && m_path_received) || m_path.poses.size() == 0)
   {
-    ROS_INFO("odom_received, path_received, path size: %d, %d, %d",(int)m_odom_received, (int)m_path_received, (int)m_path.poses.size());
+	RCLCPP_INFO(get_logger(), "odom_received, path_received, path size: %d, %d, %d",(int)m_odom_received, (int)m_path_received, (int)m_path.poses.size());
     //m_state = STATE_SEARCH_IN_PLACE;
     return;
   }
@@ -551,7 +568,7 @@ void NavStates::search_in_place()
 {
   if(m_first_search)
   {
-    m_init_search_time = rclcpp::Time::now();
+    m_init_search_time = now();
     m_first_search = false;
   }
 
@@ -566,7 +583,7 @@ void NavStates::search_in_place()
   if(get_time_in_state() > params.search_time || m_collision)
   {
     m_state = STATE_TRACK_PATH;
-    if( (rclcpp::Time::now()-m_init_search_time).toSec() > params.max_camera_search_time)
+    if( (now()-m_init_search_time).seconds() > params.max_camera_search_time)
     {
       if(m_obs_cone_received)
       {
@@ -619,7 +636,7 @@ void NavStates::touch_target()
     m_omega = 0.0;
     m_state = STATE_RETREAT_FROM_CONE;
     // Known obstacle pose should be published in the odom frame for AvoidObs costmap
-    known_obs_pub_.publish(bot_pose);
+    known_obs_pub_->publish(bot_pose);
   }
 }
 void NavStates::retreat_from_cone()
@@ -642,12 +659,12 @@ void NavStates::retreat_from_cone()
 }
 void NavStates::update_target()
 {
-  wp_goal_pub_.publish(camera_cone_pose);
+  wp_goal_pub_->publish(camera_cone_pose);
 }
 
 void NavStates::update_target(geometry_msgs::msg::PoseStamped target_pose)
 {
-  wp_goal_pub_.publish(target_pose);
+  wp_goal_pub_->publish(target_pose);
 }
 
 void NavStates::update_states()
@@ -673,7 +690,7 @@ void NavStates::update_states()
     retreat_from_cone();
     break;
   default: //optional
-  ROS_INFO("Nav State not defined");
+  RCLCPP_INFO(get_logger(), "Nav State not defined");
   }
 
   if(prev_state != m_state)
@@ -715,13 +732,13 @@ void NavStates::update_states()
   geometry_msgs::msg::Twist cmd;
   cmd.linear.x = m_filt_speed;
   cmd.angular.z = m_omega;
-  cmd_pub_.publish(cmd);
+  cmd_pub_->publish(cmd);
 
   m_nav_state_msg.data = m_state;
-  nav_state_pub_.publish(m_nav_state_msg);
+  nav_state_pub_->publish(m_nav_state_msg);
 
   m_hill_wp_msg.data = m_current_hill_type;
-  hill_wp_pub_.publish(m_hill_wp_msg);
+  hill_wp_pub_->publish(m_hill_wp_msg);
 
   if(m_odom_goal_refresh_needed)
   {
@@ -732,17 +749,19 @@ void NavStates::update_states()
 int main(int argc, char **argv)
 {
   //Initiate ROS
-  ros::init(argc, argv, "nav_states");
+  rclcpp::init(argc, argv);
+  rclcpp::NodeOptions node_options;
+  auto nav_states_node = std::make_shared<NavStates>(node_options);
 
-  NavStates nav_states;
-  ROS_INFO("Starting Navigation State Manager");
-  int loop_hz = nav_states.get_plan_rate();
-  ros::Rate rate(loop_hz);
+  RCLCPP_INFO(nav_states_node->get_logger(), "Starting Navigation State Manager");
+  int loop_hz = nav_states_node->get_plan_rate();
+  rclcpp::Rate rate(loop_hz);
 
-  while(ros::ok())
+  //rclcpp::spin(nav_states_node);
+  while(rclcpp::ok())
   {
-    ros::spinOnce();
-    nav_states.update_states();
+	rclcpp::spin_some(nav_states_node);
+	nav_states_node->update_states();
     rate.sleep();
   }
 
