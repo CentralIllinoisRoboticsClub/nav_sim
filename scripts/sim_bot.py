@@ -1,36 +1,57 @@
-#!/usr/bin/env python
-
-import rospy, math, random
+import rclpy
+from rclpy.node import Node
+import rclpy.time
+import math, random
 import numpy as np
 
 from std_msgs.msg import Int16
 
 from nav_msgs.msg import Odometry
-import tf
 from geometry_msgs.msg import Twist, Quaternion, Point, Pose, Vector3
 
 from sensor_msgs.msg import LaserScan
 
+# https://github.com/ros/geometry2/issues/222
+# https://github.com/davheld/tf/blob/master/src/tf/transformations.py
+import transformations # for euler to quat
+
+from tf2_ros.transform_broadcaster import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped
+
 import time
 import sys
 
-class SimBot():
+# For py and c++ in one package
+# https://github.com/tanyouliang95/MySandBox/tree/master/ros2_payload
+
+# https://github.com/ros2/geometry2/tree/ros2/examples_tf2_py/examples_tf2_py
+# https://github.com/ros2/geometry2/blob/ros2/examples_tf2_py/examples_tf2_py/dynamic_broadcaster.py
+
+class SimBot(Node):
     def __init__(self):
-        rospy.init_node('bot_simulator')
+        super().__init__('bot_simulator')
         
-        rospy.Subscriber('cmd_vel', Twist, self.sim_cmd_callback, queue_size=1)
+        self.cmd_sub = self.create_subscription(
+            Twist, 'cmd_vel', self.sim_cmd_callback, 1)
+        self.cmd_sub # prevent unused var warning
         
-        self.USE_SIMPLE_SCAN_SIM = True
+        self.USE_SIMPLE_SCAN_SIM = False
         
         if(self.USE_SIMPLE_SCAN_SIM):
-            self.scan_pub = rospy.Publisher('noise_scan', LaserScan, queue_size=50)
+            self.scan_pub = self.create_publisher(LaserScan, 'noise_scan', 50)
         
-        self.odom_pub = rospy.Publisher('odom', Odometry, queue_size=5)
-        self.odom_broadcaster = tf.TransformBroadcaster()
-        self.prev_time = rospy.Time.now()
-        self.scan_time1 = self.prev_time
+        self.odom_pub = self.create_publisher(Odometry, 'odom', 5)
+        self.odom_broadcaster = TransformBroadcaster(self)
+        self.tfs = TransformStamped()
+        self.tfs.header.frame_id = "odom"
+        self.tfs.child_frame_id = "base_link"
+        self.tfs.transform.translation.z = 0.0
         
-        rospy.loginfo('Initializing bot simulator.')
+        now_stamp = self.get_clock().now().to_msg()
+        self.prev_time = now_stamp
+        self.scan_time1 = now_stamp
+        
+        self.get_logger().info('Initializing bot simulator.')
         
         self.v = 0
         self.w = 0
@@ -46,8 +67,13 @@ class SimBot():
         
         self.noise_scan_active = False
         self.active_duration = 0.0
-        self.check_time = rospy.Time.now()
-        self.noise_scan_start_time = rospy.Time.now()
+        self.check_time = now_stamp
+        self.noise_scan_start_time = now_stamp
+        
+        self.timer = self.create_timer(1./50., self.update_odom)
+    
+    def dt_to_sec(self, stampA, stampB):
+        return stampA.sec + stampA.nanosec * 10**-9 - stampB.sec - stampB.nanosec * 10**-9
                 
     def sim_cmd_callback(self, data):
         v = data.linear.x
@@ -77,10 +103,10 @@ class SimBot():
     
     def update_odom(self):
         
-        t2 = rospy.Time.now()
+        t2 = self.get_clock().now().to_msg()
         t1 = self.prev_time
         self.prev_time = t2
-        dt = (t2-t1).to_sec()
+        dt = self.dt_to_sec(t2,t1)
         
         accel = (self.v_cmd - self.v)/dt
         mu_v = np.sign(accel)
@@ -105,25 +131,37 @@ class SimBot():
         self.botx = self.botx + dx
         self.boty = self.boty + dy
         
-        odom_quat = tf.transformations.quaternion_from_euler(0, 0, self.bot_rad)
-        self.odom_broadcaster.sendTransform(
-        (self.botx, self.boty, 0.),
-        odom_quat,
-        t2,
-        "base_link",
-        "odom"
-        )
+        odom_quat = transformations.quaternion_from_euler(0, 0, self.bot_rad)
+        
+        self.tfs.header.stamp = t2
+        self.tfs.transform.translation.x = self.botx
+        self.tfs.transform.translation.y = self.boty
+        #self.tfs.transform.rotation = odom_quat
+        self.tfs.transform.rotation.x = odom_quat[0]
+        self.tfs.transform.rotation.y = odom_quat[1]
+        self.tfs.transform.rotation.z = odom_quat[2]
+        self.tfs.transform.rotation.w = odom_quat[3]
+        self.odom_broadcaster.sendTransform(self.tfs)
         
         odom = Odometry()
         odom.header.stamp = t2
         odom.header.frame_id = "odom"
 
         # set the position
-        odom.pose.pose = Pose(Point(self.botx, self.boty, 0.), Quaternion(*odom_quat))
+        #odom.pose.pose = Pose( Point(self.botx, self.boty, 0.), Quaternion(self.tfs.transform.rotation) )
+        odom.pose.pose.position.x = self.botx
+        odom.pose.pose.position.y = self.boty
+        odom.pose.pose.position.z = 0.0
+        odom.pose.pose.orientation.x = self.tfs.transform.rotation.x
+        odom.pose.pose.orientation.y = self.tfs.transform.rotation.y
+        odom.pose.pose.orientation.z = self.tfs.transform.rotation.z
+        odom.pose.pose.orientation.w = self.tfs.transform.rotation.w
 
         # set the velocity
         odom.child_frame_id = "base_link"
-        odom.twist.twist = Twist(Vector3(self.v, 0, 0), Vector3(0, 0, self.w))
+        #odom.twist.twist = Twist(Vector3(self.v, 0, 0), Vector3(0, 0, self.w))
+        odom.twist.twist.linear.x = self.v
+        odom.twist.twist.angular.z = self.w
 
         # publish the message
         self.odom_pub.publish(odom)
@@ -140,9 +178,9 @@ class SimBot():
             fov = 24
             nDet = 8
             
-            current_time = rospy.Time.now()
-            delta_check_time = (current_time - self.check_time).to_sec()
-            delta_active_time = (current_time - self.noise_scan_start_time).to_sec()
+            current_time = self.get_clock().now().to_msg()
+            delta_check_time = self.dt_to_sec(current_time, self.check_time)
+            delta_active_time = self.dt_to_sec(current_time, self.noise_scan_start_time)
             scan.header.stamp = current_time
             scan.angle_min = -fov/2*3.14/180.0
             scan.angle_max = fov/2*3.14/180.0
@@ -155,12 +193,12 @@ class SimBot():
             #   This state is latched for 1-2 sec
             if(not self.noise_scan_active and delta_check_time > 1.0): #only check the random number every second
                 rn  = random.randint(0,10)
-                rospy.loginfo('checking random number: %d', rn)
+                self.get_logger().info('checking random number: %d', rn)
                 if(rn > 6):
                     self.noise_scan_active = True
                     self.noise_scan_start_time = current_time
                     self.active_duration = random.random()*2.0 + 1.0
-                    rospy.loginfo('active duration: %0.1f',self.active_duration)
+                    self.get_logger().info('active duration: %0.1f',self.active_duration)
                     
                 #end if
                 self.check_time = current_time
@@ -173,7 +211,7 @@ class SimBot():
             if(self.noise_scan_active):
                 obstacle_found = False
                 dx = 5.0 - self.botx
-                if( (t2 - self.scan_time1).to_sec() > 15.0):
+                if( self.dt_to_sec(t2, self.scan_time1) > 15.0):
                     dx = 2.0 - self.botx
                 dy = 0.0 - self.boty
                 theta = math.atan2(dy,dx)
@@ -195,23 +233,22 @@ class SimBot():
             #end if active or not
             self.scan_pub.publish(scan)
             
-            br = tf.TransformBroadcaster()
+            br = TransformBroadcaster(self)
             roll = 0
             pitch = 0.08
             laser_quat = tf.transformations.quaternion_from_euler(roll, pitch, 0)
             br.sendTransform((0,0,0.3),laser_quat,t2,"noise_laser","base_link")
         
 
-if __name__ == '__main__':
-    try:
-        sim_bot = SimBot()
-        rospy.loginfo("Starting bot simulator")
+def main(args=None):
+    rclpy.init(args=args)
+    sim_bot = SimBot()
+    sim_bot.get_logger().info("Starting bot simulator")
 
-        r = rospy.Rate(50.0)
-        while not rospy.is_shutdown():
-            sim_bot.update_odom()
-            r.sleep()
-            
-    except rospy.ROSInterruptException:
-        rospy.logerr("SimBot failed to start")
-        pass
+    rclpy.spin(sim_bot)
+    
+    sim_bot.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
