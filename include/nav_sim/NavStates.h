@@ -1,5 +1,7 @@
 // Copyright 2019 coderkarl. Subject to the BSD license.
 
+// Eclipse, Project, Properties, C/C++ General, Paths and Symbols, Includes, Add /opt/ros/foxy
+
 #ifndef NavStates_H
 #define NavStates_H
 
@@ -12,8 +14,10 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/point.hpp>
-//#include <tf2/transform_listener.hpp>
+
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <std_msgs/msg/int16.hpp>
 #include <string>
 #include <memory>
@@ -86,7 +90,9 @@ private:
   geometry_msgs::msg::PoseStamped camera_cone_pose, obs_cone_pose, camera_cone_pose_in_map;
   float bot_yaw;
 
-  //tf::TransformListener listener;
+  std::shared_ptr<tf2_ros::TransformListener> listener;
+  std::shared_ptr<tf2_ros::Buffer> tfBuffer;
+
   nav_msgs::msg::Path m_path;
   std_msgs::msg::Int16 m_nav_state_msg, m_hill_wp_msg;
 

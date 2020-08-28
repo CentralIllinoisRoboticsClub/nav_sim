@@ -3,9 +3,11 @@
 #include "nav_sim/NavStates.h"
 //#include "avoid_obstacles/AvoidObsCommon.h" // get_yaw()
 #include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <math.h>
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
+#include <tf2_ros/create_timer_ros.h>
 
 /**********************************************************************
  * State machine for navigating to waypoints and perception targets
@@ -51,7 +53,15 @@ m_filt_speed(0.0),
 m_scan_collision_db_count(0),
 m_cone_detect_db_count(0),
 m_close_to_obs(false)
-{	
+{
+  // https://github.com/ros-planning/navigation2/blob/foxy-devel/nav2_amcl/src/amcl_node.cpp
+  tfBuffer = std::make_shared<tf2_ros::Buffer>(get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+  		get_node_base_interface(),
+  		get_node_timers_interface());
+  tfBuffer->setCreateTimerInterface(timer_interface);
+  listener = std::make_shared<tf2_ros::TransformListener>(*tfBuffer);
+
   //Topics you want to publish
   cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel",10);
 
@@ -119,6 +129,8 @@ m_close_to_obs(false)
   //listener.setExtrapolationLimit(ros::Duration(0.1));
   //listener.waitForTransform("laser", "odom", rclcpp::Time(0), ros::Duration(10.0)); //TODO: rclcpp::Time(0) or ::now() ??
   //listener.waitForTransform("base_link", "odom", rclcpp::Time(0), ros::Duration(10.0));
+  tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+  tfBuffer->lookupTransform("base_link", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
 
   if(waypoints_are_in_map_frame)
   {
@@ -299,29 +311,19 @@ double NavStates::distance_between_poses(const geometry_msgs::msg::PoseStamped& 
 bool NavStates::getPoseInFrame(const geometry_msgs::msg::PoseStamped& pose_in, std::string target_frame,
     geometry_msgs::msg::PoseStamped& pose_out)
 {
-  (void)target_frame;
-  (void)pose_out;
-  // *********** tf LESSONS LEARNED ****************
-  // waitForTrasform req_time = timestamp of the pose we are transforming
-  //   do NOT use rclcpp::Time(0) or now()
-  //   TODO: Compare to AvoidObs::scanCallback()
-
-  //pose_in.header.stamp = now(); //TODO: does this help or hurt?
-  rclcpp::Time req_time = pose_in.header.stamp; // - ros::Duration(0.1);
-  //pose_out.header.stamp = req_time;
-  //TODO: rclcpp::Time(0) or ::now() or pose_in stamp ?? CHECK IF pose_in stamp is set to recent outside of this function
-  /*listener.waitForTransform(target_frame, pose_in.header.frame_id, req_time, ros::Duration(10.0));
   try
   {
-    listener.transformPose(target_frame, pose_in, pose_out);
+    tfBuffer->transform(pose_in, pose_out, target_frame, tf2::durationFromSec(10.0));
+    //geometry_msgs::msg::TransformStamped tf =
+    //	tfBuffer.lookupTransform(target_frame, pose_in.header.frame_id, req_time, rclcpp::Duration(10.0));
     return true;
   }
-  catch (tf::TransformException& ex)
+  catch (tf2::TransformException& ex)
   {
-    RCLCPP_ERROR("NavStates getPose Received an exception trying to transform a pose : %s", ex.what());
+    RCLCPP_ERROR(get_logger(), "NavStates getPose Received an exception trying to transform a pose : %s", ex.what());
     return false;
 
-  }*/
+  }
   return true;
 }
 
