@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import rclpy
 from rclpy.node import Node
 import rclpy.time
@@ -13,7 +15,8 @@ from sensor_msgs.msg import LaserScan
 
 # https://github.com/ros/geometry2/issues/222
 # https://github.com/davheld/tf/blob/master/src/tf/transformations.py
-import transformations # for euler to quat
+# https://stackoverflow.com/questions/57426715/import-modules-in-package-in-ros2
+import nav_sim.transformations as transformations# for euler to quat
 
 from tf2_ros.transform_broadcaster import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped

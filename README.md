@@ -1,6 +1,30 @@
-# Simple ROS simulation for path planning with lidar
+# Simple ROS2 simulation for path planning with lidar
 clone or download zip to catkin_ws/src/
 `git clone https://github.com/CentralIllinoisRoboticsClub/nav_sim.git`
+
+# ROS2 WIP status
+See nav_sim/launch/nav_sim2.launch.py  
+This tests sim_bot.py, the static map, nav_sim_ros2.rviz, and light_scan_sim  
+light_scan_sim for ros2 is at  
+`git clone https://github.com/CentralIllinoisRoboticsClub/light_scan_sim.git`  
+
+colcon build --symlink-install --packages-select nav_sim  
+colcon build --symlink-install --packages-select light_scan_sim  
+ros2 launch nav_sim nav_sim2.launch.py  
+
+After launching, the map_server has not yet published /map  
+See the links commented in nav_sim2.launch.py  
+In another terminal:  
+```
+ros2 lifecycle set map_server configure
+ros2 lifecycle set map_server activate
+```
+[Reference launch file](https://github.com/ros-drivers/ros2_ouster_drivers/blob/eloquent-devel/ros2_ouster/launch/os1_launch.py)
+
+Finally in another terminal:  
+`ros2 run turtlesim turtle_teleop_key --ros-arg -r turtle1/cmd_vel:=cmd_vel`
+
+## MISC planner notes
 
 We recently tried our own simpler local planner that just tries to follow the global path plan.
 See the test_wheele_local_planner branch in this nav_sim repo.

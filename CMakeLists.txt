@@ -11,12 +11,19 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-ament_python_install_package(scripts/)
+ament_python_install_package(nav_sim/)
 
 ament_auto_find_build_dependencies()
 
 #add_executable(avoid_obs src/AvoidObs.cpp src/PotentialFields.cpp)
 #add_executable(astar src/Astar.cpp)
 ament_auto_add_executable(nav_states src/NavStates.cpp)
+
+install(DIRECTORY
+  launch
+  config
+  
+  DESTINATION share/${PROJECT_NAME}
+)
 
 ament_auto_package()

@@ -76,6 +76,7 @@ private:
   std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > hill_wp_pub_;
   std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > valid_bump_pub_;
   
+  //rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan2_sub_;
   std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan> > scan_sub_;
   std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry> > odom_sub_;
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > clicked_goal_sub_;
