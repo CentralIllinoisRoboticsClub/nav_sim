@@ -59,7 +59,8 @@ def generate_launch_description():
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
-        arguments=['-d', config_rviz]
+        arguments=['-d', config_rviz],
+        remappings=[("move_base_simple/goal", "wp_goal")]
     )
     
     # https://answers.ros.org/question/326070/ros2-nav2_map_server-can-not-load-map/

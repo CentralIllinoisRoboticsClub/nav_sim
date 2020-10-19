@@ -4,21 +4,23 @@
 #define AvoidObs_H
 
 //ROS Includes
-#include <ros/ros.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <nav_msgs/Path.h>
-#include <nav_msgs/Odometry.h>
-#include <sensor_msgs/LaserScan.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <tf/transform_listener.h>
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include "PotentialFields.h"
-#include <std_msgs/Int16.h>
+#include <std_msgs/msg/int16.hpp>
 #include <deque>
 //#include <std_msgs/String.h>
 
 
-class AvoidObs
+class AvoidObs: public rclcpp::Node
 {
     public:
 		AvoidObs();
@@ -27,16 +29,16 @@ class AvoidObs
         //returns parameter rate_ in hz
         // used to define ros::Rate
         double get_plan_rate();
-        bool update_plan();
+        void update_plan();
         
     private:
-        void scanCallback(const sensor_msgs::LaserScan& scan);
-        void odomCallback(const nav_msgs::Odometry& odom);
-        void goalCallback(const geometry_msgs::PoseStamped& data);
-        void coneCallback(const geometry_msgs::PoseStamped& data);
-        void knownObstacleCallback(const geometry_msgs::PoseStamped& obs_pose);
-        void foundConeCallback(const std_msgs::Int16& msg);
-        void hillWaypointCallback(const std_msgs::Int16& msg);
+        void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
+        void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
+        void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data);
+        void coneCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data);
+        void knownObstacleCallback(const geometry_msgs::msg::PoseStamped::SharedPtr obs_pose);
+        void foundConeCallback(const std_msgs::msg::Int16::SharedPtr msg);
+        void hillWaypointCallback(const std_msgs::msg::Int16::SharedPtr msg);
         
         void update_cell(float x, float y, int val);
         
@@ -45,26 +47,34 @@ class AvoidObs
         bool check_for_cone_obstacle();
         void check_known_obstacles();
 
-        ros::NodeHandle nh_;
-        ros::NodeHandle nh_p;
-        ros::Publisher costmap_pub_, pf_obs_pub_;
-        ros::Publisher cmd_pub_;
-        ros::Publisher obs_cone_pub_;
-        ros::Subscriber scan_sub_, odom_sub_, goal_sub_, wp_cone_sub_, found_cone_sub_, known_obstacle_sub_, hill_wp_sub_;
+        rclcpp::TimerBase::SharedPtr m_timer;
+
+        std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid> > costmap_pub_, pf_obs_pub_;
+        std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist> > cmd_pub_;
+        std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > obs_cone_pub_;
+
+        std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan> > scan_sub_;
+        std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry> > odom_sub_;
+        std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > goal_sub_;
+        std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > wp_cone_sub_;
+        std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > found_cone_sub_;
+        std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > known_obstacle_sub_;
+        std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > hill_wp_sub_;
         
         PotentialFields pf;
 
         unsigned num_obs_cells;
-        geometry_msgs::Pose map_pose, pfObs_pose;
-        nav_msgs::OccupancyGrid costmap, pfObs;
+        geometry_msgs::msg::Pose map_pose, pfObs_pose;
+        nav_msgs::msg::OccupancyGrid costmap, pfObs;
 
-        geometry_msgs::Pose bot_pose, goal_pose;
-        geometry_msgs::PoseStamped camera_cone_poseStamped, obs_cone_poseStamped;
+        geometry_msgs::msg::Pose bot_pose, goal_pose;
+        geometry_msgs::msg::PoseStamped camera_cone_poseStamped, obs_cone_poseStamped;
         float bot_yaw;
         
-        tf::TransformListener listener;
+        std::shared_ptr<tf2_ros::TransformListener> listener;
+        std::shared_ptr<tf2_ros::Buffer> tfBuffer;
 
-        std::deque<geometry_msgs::PoseStamped> knownObstacleDeq;
+        std::deque<geometry_msgs::msg::PoseStamped> knownObstacleDeq;
 
         double scan_range; //assigned to max_range_ or min_hill_range_ in hillWaypointCallback
 

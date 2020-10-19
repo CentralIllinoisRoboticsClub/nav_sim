@@ -129,8 +129,12 @@ m_close_to_obs(false)
   //listener.setExtrapolationLimit(ros::Duration(0.1));
   //listener.waitForTransform("laser", "odom", rclcpp::Time(0), ros::Duration(10.0)); //TODO: rclcpp::Time(0) or ::now() ??
   //listener.waitForTransform("base_link", "odom", rclcpp::Time(0), ros::Duration(10.0));
-  tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
-  tfBuffer->lookupTransform("base_link", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+  try{
+    tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+    tfBuffer->lookupTransform("base_link", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+  } catch (tf2::TransformException &ex) {
+    RCLCPP_WARN(get_logger(), "NavStates: %s",ex.what());
+  }
 
   if(waypoints_are_in_map_frame)
   {
@@ -510,7 +514,7 @@ void NavStates::track_path()
 
   if(!(m_odom_received && m_path_received) || m_path.poses.size() == 0)
   {
-	RCLCPP_INFO(get_logger(), "odom_received, path_received, path size: %d, %d, %d",(int)m_odom_received, (int)m_path_received, (int)m_path.poses.size());
+	//RCLCPP_INFO(get_logger(), "odom_received, path_received, path size: %d, %d, %d",(int)m_odom_received, (int)m_path_received, (int)m_path.poses.size());
     //m_state = STATE_SEARCH_IN_PLACE;
     return;
   }

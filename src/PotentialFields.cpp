@@ -1,6 +1,6 @@
 // Copyright 2019 coderkarl. Subject to the BSD license.
 
-#include "avoid_obstacles/PotentialFields.h"
+#include "nav_sim/PotentialFields.h"
 #include <cmath>
 
 PotentialFields::PotentialFields() :
@@ -20,10 +20,10 @@ PotentialFields::PotentialFields() :
 
 PotentialFields::~PotentialFields(){}
 
-geometry_msgs::Twist PotentialFields::update_cmd(float bot_yaw)
+geometry_msgs::msg::Twist PotentialFields::update_cmd(float bot_yaw)
 {
-	geometry_msgs::Twist cmd;
-	geometry_msgs::Vector3 odom_vel = get_vxvy();
+	geometry_msgs::msg::Twist cmd;
+	geometry_msgs::msg::Vector3 odom_vel = get_vxvy();
 	float des_yaw;
 
 	if(odom_vel.x == 0 && odom_vel.y == 0)
@@ -54,10 +54,10 @@ geometry_msgs::Twist PotentialFields::update_cmd(float bot_yaw)
 	return cmd;
 }
 
-geometry_msgs::Vector3 PotentialFields::get_vxvy()
+geometry_msgs::msg::Vector3 PotentialFields::get_vxvy()
 {
 	// velocity in the odom frame
-	geometry_msgs::Vector3 vel, Fattr, Frepel, Frepel_filt;
+	geometry_msgs::msg::Vector3 vel, Fattr, Frepel, Frepel_filt;
 	float Fx, Fy;
 
 	vel.x = 0;
@@ -95,9 +95,9 @@ geometry_msgs::Vector3 PotentialFields::get_vxvy()
 	return vel;
 }
 
-geometry_msgs::Vector3 PotentialFields::get_Fattr()
+geometry_msgs::msg::Vector3 PotentialFields::get_Fattr()
 {
-	geometry_msgs::Vector3 Fattr;
+	geometry_msgs::msg::Vector3 Fattr;
 	Fattr.x = 0;
 	Fattr.y = 0;
 
@@ -120,9 +120,9 @@ geometry_msgs::Vector3 PotentialFields::get_Fattr()
 
 	return Fattr;
 }
-geometry_msgs::Vector3 PotentialFields::get_Frepel(geometry_msgs::Vector3 Fattr)
+geometry_msgs::msg::Vector3 PotentialFields::get_Frepel(geometry_msgs::msg::Vector3 Fattr)
 {
-	geometry_msgs::Vector3 Frepel;
+	geometry_msgs::msg::Vector3 Frepel;
 	Frepel.x = 0;
 	Frepel.y = 0;
 
@@ -174,9 +174,9 @@ geometry_msgs::Vector3 PotentialFields::get_Frepel(geometry_msgs::Vector3 Fattr)
 	return Frepel;
 }
 
-geometry_msgs::Vector3 PotentialFields::get_Frepel2(geometry_msgs::Vector3 Fattr)
+geometry_msgs::msg::Vector3 PotentialFields::get_Frepel2(geometry_msgs::msg::Vector3 Fattr)
 {
-    geometry_msgs::Vector3 Frepel;
+    geometry_msgs::msg::Vector3 Frepel;
     Frepel.x = 0;
     Frepel.y = 0;
 
