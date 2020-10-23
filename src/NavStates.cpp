@@ -8,6 +8,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 #include <tf2_ros/create_timer_ros.h>
+#include <tf2/utils.h> // tf2::getYaw(orientation or quat)
 
 /**********************************************************************
  * State machine for navigating to waypoints and perception targets
@@ -76,7 +77,7 @@ m_close_to_obs(false)
   //Topic you want to subscribe
   scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", 50, std::bind(&NavStates::scanCallback, this, _1)); //receive laser scan
   odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&NavStates::odomCallback, this, _1));
-  clicked_goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("/move_base_simple/goal", 1, std::bind(&NavStates::clickedGoalCallback, this, _1));
+  clicked_goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 1, std::bind(&NavStates::clickedGoalCallback, this, _1));
   cam_cone_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("cam_cone_pose", 1, std::bind(&NavStates::camConeCallback, this, _1));
   obs_cone_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("obs_cone_pose", 1, std::bind(&NavStates::obsConeCallback, this, _1));
   bump_sub_ = create_subscription<std_msgs::msg::Int16>("bump_switch",1, std::bind(&NavStates::bumpCallback, this, _1));
@@ -383,7 +384,7 @@ void NavStates::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
   bot_pose.header.stamp = odom->header.stamp;
   bot_pose.pose.position = odom->pose.pose.position;
   bot_pose.pose.orientation = odom->pose.pose.orientation;
-  bot_yaw = 0.0; //get_yaw(bot_pose.pose);
+  bot_yaw = tf2::getYaw(bot_pose.pose.orientation); //get_yaw(bot_pose.pose);
   m_odom_received = true;
 }
 

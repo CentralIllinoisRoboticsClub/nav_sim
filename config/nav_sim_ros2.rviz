@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /Grid1
         - /LaserScan1
+        - /wp_goal1
       Splitter Ratio: 0.5
     Tree Height: 617
   - Class: rviz_common/Selection
@@ -151,7 +152,7 @@ Visualization Manager:
       Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: pfObs
       Topic:
         Depth: 5
@@ -166,7 +167,26 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /pfObs_updates
       Use Timestamp: false
-      Value: false
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.4000000059604645
+      Head Radius: 0.20000000298023224
+      Name: wp_goal
+      Shaft Length: 1
+      Shaft Radius: 0.10000000149011612
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /wp_goal
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -210,7 +230,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 84.20035552978516
+      Distance: 91.60799407958984
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

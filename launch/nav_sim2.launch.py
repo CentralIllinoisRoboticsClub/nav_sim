@@ -31,6 +31,11 @@ def generate_launch_description():
                 get_package_share_directory('nav_sim') + '/launch/scan_sim2.launch.py')
     )
     
+    avoid_obs_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                get_package_share_directory('nav_sim') + '/launch/sim_avoid_obstacles2.launch.py')
+    )
+    
     sim_bot_node = Node(
         package="nav_sim",
         executable="sim_bot",
@@ -60,7 +65,7 @@ def generate_launch_description():
         package="rviz2",
         executable="rviz2",
         arguments=['-d', config_rviz],
-        remappings=[("move_base_simple/goal", "wp_goal")]
+        #remappings=[("goal_pose", "wp_goal")]
     )
     
     # https://answers.ros.org/question/326070/ros2-nav2_map_server-can-not-load-map/
@@ -121,5 +126,6 @@ def generate_launch_description():
     ld.add_action(map_node)
     ld.add_action(configure_map_event)
     #ld.add_action(activate_map_event)
+    ld.add_action(avoid_obs_launch)
     
     return ld

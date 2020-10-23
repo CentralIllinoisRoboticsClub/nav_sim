@@ -7,6 +7,7 @@
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
 #include <tf2_ros/create_timer_ros.h>
+#include <tf2/utils.h> // tf2::getYaw(orientation or quat)
 
 /**********************************************************************
 * Obstacle Avoidance using a nav_msgs/OccupacyGrid and A* path planning
@@ -285,9 +286,9 @@ void AvoidObs::update_plan()
 		int bot_ix, bot_iy;
 		get_map_indices(pf.bot.x, pf.bot.y, bot_ix, bot_iy);
 
-		for(int ix = bot_ix - 5; ix < bot_ix+5; ++ix)
+		for(int ix = bot_ix - 15; ix < bot_ix+15; ++ix)
 		{
-			for(int iy = bot_iy - 5; iy < bot_iy+5; ++iy)
+			for(int iy = bot_iy - 15; iy < bot_iy+15; ++iy)
 			{
 				if(get_cost(ix,iy) > 30)
 				{
@@ -324,7 +325,7 @@ void AvoidObs::update_plan()
         pfObs.data[iy*n_width_ + ix] = 50;
         pf.obs_list.push_back(obs);
 		// end testing hard coded obstacle list
-		bot_yaw = 0; //get_yaw(bot_pose);
+		bot_yaw = tf2::getYaw(bot_pose.orientation); //get_yaw(bot_pose);
 		geometry_msgs::msg::Twist cmd = pf.update_cmd(bot_yaw);
 		//ROS_INFO("bot_yaw: %0.2f", bot_yaw);
 
