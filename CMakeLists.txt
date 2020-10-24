@@ -16,7 +16,7 @@ ament_python_install_package(nav_sim/)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_executable(avoid_obs src/AvoidObs.cpp src/PotentialFields.cpp)
-#ament_auto_add_executable(astar src/Astar.cpp)
+ament_auto_add_executable(astar src/Astar.cpp)
 ament_auto_add_executable(nav_states src/NavStates.cpp)
 
 install(DIRECTORY

@@ -151,10 +151,10 @@ private:
     //int min_new_path_size;
   }params;
 
-  std::vector<double> x_coords{16.0, 0.0, 6.0};
-  std::vector<double> y_coords{8.0,  8.0, 0.0};
-  std::vector<int64_t> waypoint_type_list{0,0,0};
-  std::vector<int64_t> hill_wp_list{0,0,0};
+  std::vector<double> x_coords;
+  std::vector<double> y_coords;
+  std::vector<int64_t> waypoint_type_list;
+  std::vector<int64_t> hill_wp_list;
   bool waypoints_are_in_map_frame;
   bool sim_mode;
 

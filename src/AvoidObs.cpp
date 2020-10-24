@@ -20,7 +20,7 @@ using std::placeholders::_1;
 
 //Constructor
 AvoidObs::AvoidObs() :
-    Node("turtle_master")
+    Node("avoid_obs")
 {
     // https://github.com/ros-planning/navigation2/blob/foxy-devel/nav2_amcl/src/amcl_node.cpp
     tfBuffer = std::make_shared<tf2_ros::Buffer>(get_clock());

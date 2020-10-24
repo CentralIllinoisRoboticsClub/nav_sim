@@ -35,9 +35,13 @@ def generate_launch_description():
                     {'reverse_speed': 0.8},
                     {'bump_db_limit': 2},
                     {'path_step_size': 3},
-                    {'waypoints_are_in_map_frame': False}
+                    {'waypoints_are_in_map_frame': True},
+                    {'x_coords':          [17.0, 5.0, 7.0]},
+                    {'y_coords':          [9.0, 29.0, 1.0]},
+                    {'waypoint_types':     [0,   0,    0]},
+                    {'hill_waypoint_list': [0,   0,    0]}
         ],
-        remappings=[('cmd_vel', 'ignore_cmd_vel')]
+        #remappings=[('cmd_vel', 'ignore_cmd_vel')]
     )
     
     avoid_obs_node = Node(
@@ -55,7 +59,7 @@ def generate_launch_description():
                     {'inflation_factor': 2},
                     {'reinflate_cost_thresh': 30},
                     {'reinflate_radius': 5.0},
-                    {'use_PotFields': True},
+                    {'use_PotFields': False},
                     {'cone_search_radius': 1.0},
                     {'cone_obs_thresh': 0},
                     {'max_num_known_obstacles': 30},
@@ -66,6 +70,8 @@ def generate_launch_description():
     astar_node = Node(
         package="nav_sim",
         executable="astar",
+        output="screen",
+        emulate_tty=True,
         parameters=[{'plan_rate_hz': 5.0},
                     {'obs_thresh': 30},
                     {'obs_weight': 0.1},
@@ -75,5 +81,6 @@ def generate_launch_description():
     
     ld.add_action(avoid_obs_node)
     ld.add_action(nav_states_node)
+    ld.add_action(astar_node)
     
     return ld

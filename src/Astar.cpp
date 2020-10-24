@@ -1,15 +1,16 @@
 // Copyright 2019 coderkarl. Subject to the BSD license.
 
-#include "avoid_obstacles/Astar.h"
-#include "avoid_obstacles/AvoidObsCommon.h"
+#include "nav_sim/Astar.h"
 
-#include <geometry_msgs/PoseStamped.h>
-#include <tf/transform_datatypes.h>
+#include <geometry_msgs/msg/pose_stamped.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
 #include <boost/math/special_functions/round.hpp>
 #include <algorithm>
+#include <tf2_ros/create_timer_ros.h>
+
+using std::placeholders::_1;
 
 bool compareCells (const Astar::Cell& cellA, const Astar::Cell& cellB)
 {
@@ -18,6 +19,7 @@ bool compareCells (const Astar::Cell& cellA, const Astar::Cell& cellB)
 }
 
 Astar::Astar():
+    Node("Astar"),
 		map_x0(0.0),
 		map_y0(0.0),
 		map_res(0.5),
@@ -25,23 +27,30 @@ Astar::Astar():
 		NUM_COLS(0),
 		m_map()
 {
-    path_pub_ = nh_.advertise<nav_msgs::Path>("path", 1);
-    odom_sub_ = nh_.subscribe("odom", 1, &Astar::odomCallback, this);
-    goal_sub_ = nh_.subscribe("wp_goal", 1, &Astar::goalCallback, this);
-    costmap_sub_ = nh_.subscribe("costmap", 1, &Astar::costmapCallback, this);
-    nh_p  = ros::NodeHandle("~");
-    nh_p.param("obs_thresh", obs_thresh, 50);
-    nh_p.param("obs_weight", obs_weight, 0.1);
-    nh_p.param("plan_rate_hz", plan_rate_, 1.0);
-    nh_p.param("max_plan_time_sec", max_plan_time_, 10.0);
+    path_pub_ = create_publisher<nav_msgs::msg::Path>("path", 1);
+    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10,
+                                   std::bind(&Astar::odomCallback, this, _1));
+    goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("wp_goal", 10,
+                                   std::bind(&Astar::goalCallback, this, _1));
 
-    path.header.stamp = ros::Time::now();
+    costmap_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>("costmap", 1,
+                                   std::bind(&Astar::costmapCallback, this, _1));
+
+    obs_thresh = declare_parameter("obs_thresh", 50);
+    obs_weight = declare_parameter("obs_weight", 0.1);
+    plan_rate_ = declare_parameter("plan_rate_hz", 1.0);
+    max_plan_time_ = declare_parameter("max_plan_time_sec", 10.0);
+
+    path.header.stamp = now();
     path.header.frame_id = "odom";
-    //path.poses.push_back(geometry_msgs::PoseStamped)
+    //path.poses.push_back(geometry_msgs::msg::PoseStamped)
 
     bot_pose.orientation.w = 1.0;
 
-	std::cout << "Astar initialized\n";
+    m_timer = create_wall_timer(std::chrono::milliseconds((int)(1000./plan_rate_) ),
+                  std::bind(&Astar::findPath, this) );
+
+	  std::cout << "Astar initialized\n";
 }
 
 Astar::~Astar(){}
@@ -51,20 +60,20 @@ double Astar::get_plan_rate()
     return plan_rate_;
 }
 
-void Astar::odomCallback(const nav_msgs::Odometry& odom)
+void Astar::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
 {
-    bot_pose.position = odom.pose.pose.position;
-    bot_pose.orientation = odom.pose.pose.orientation;
+    bot_pose.position = odom->pose.pose.position;
+    bot_pose.orientation = odom->pose.pose.orientation;
 }
 
-void Astar::goalCallback(const geometry_msgs::PoseStamped& data)
+void Astar::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data)
 {
-    goal_pose = data.pose;
+    goal_pose = data->pose;
 }
 
-void Astar::costmapCallback(const nav_msgs::OccupancyGrid& map)
+void Astar::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr map)
 {
-  m_map = map;
+  m_map = *map;
 }
 
 void Astar::findPath()
@@ -74,12 +83,12 @@ void Astar::findPath()
   float goal_dist_sqd = dx*dx + dy*dy;
   if(goal_dist_sqd > 0.25)
   {
-      path.header.stamp = ros::Time::now();
+      path.header.stamp = now();
       if(get_path(bot_pose, goal_pose, m_map, path))
-          path_pub_.publish(path);
-      double duration = (ros::Time::now()-path.header.stamp).toSec();
+          path_pub_->publish(path);
+      double duration = (now()-path.header.stamp).seconds();
       if(duration > 0.05)
-          ROS_WARN("Astar took %0.2f sec",duration);
+          RCLCPP_WARN(get_logger(), "Astar took %0.2f sec",duration);
   }
 }
 
@@ -90,7 +99,7 @@ bool Astar::get_map_indices(float x, float y, int& ix, int& iy)
 	return true;
 }
 
-int Astar::is_obs(nav_msgs::OccupancyGrid map, int ix, int iy)
+int Astar::is_obs(nav_msgs::msg::OccupancyGrid map, int ix, int iy)
 {
 	int ind = iy*NUM_COLS + ix;
 	if(ind > map.data.size())
@@ -102,7 +111,7 @@ int Astar::is_obs(nav_msgs::OccupancyGrid map, int ix, int iy)
 	return 0;*/
 	return map.data[ind];
 }
-int Astar::is_obs2(nav_msgs::OccupancyGrid map, int ix, int iy)
+int Astar::is_obs2(nav_msgs::msg::OccupancyGrid map, int ix, int iy)
 {
 	if(is_obs(map, ix, iy) == 1)
 	{
@@ -126,11 +135,12 @@ int Astar::is_obs2(nav_msgs::OccupancyGrid map, int ix, int iy)
 	}
 	return 0;
 }
-bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
-						nav_msgs::OccupancyGrid map, nav_msgs::Path& path)
+bool Astar::get_path(geometry_msgs::msg::Pose pose, geometry_msgs::msg::Pose goal,
+						nav_msgs::msg::OccupancyGrid map, nav_msgs::msg::Path& path)
 {
-	ros::Time start_time = ros::Time::now();
-	ros::Duration MAX_PLAN_TIME(max_plan_time_);
+	rclcpp::Time start_time = now();
+	//rclcpp::Duration MAX_PLAN_TIME(max_plan_time_); // This sets Duration MAX_PLAN_TIME to 0.0 ?
+	//RCLCPP_WARN(get_logger(), "max_plan_time %0.1f", max_plan_time_);
 
 	std::vector<Cell> open;
 	std::vector<Cell>::iterator it_insert;
@@ -215,7 +225,7 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 	  }
 	  if(goal_is_obs)
 	  {
-      ROS_WARN("Astar won't plan to obstacle goal");
+      RCLCPP_WARN(get_logger(), "Astar won't plan to obstacle goal");
       return false;
 	  }
 	}
@@ -225,7 +235,7 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 	int r1,c1, nOpen, dCount, m, r2,c2, r_init, c_init, count;
 	int numMotions = 8, rev_motion;
 	int motions[8] = {1,-1,2,-2,3,-3,4,-4}; //simp_move
-	int done, no_sol, a;
+	bool done, no_sol;
 	x1 = x_init;
 	y1 = y_init;
 	//r1 = boost::math::iround(-y_init);
@@ -237,8 +247,8 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 	//h2 = sqrt((xg-x1)^2 + (yg-y1)^2);
 	//f2 = g1+h2;
 	nOpen = 0;
-	done = 0;
-	no_sol = 0;
+	done = false;
+	no_sol = false;
 	DIST = map_res;
 
 	//printf("Begin while\n");
@@ -294,13 +304,16 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
         }
 		if(nOpen == 0)
 		{
-			no_sol = 1;
-			printf("No Solution found\n");
+			no_sol = true;
+			fprintf(stderr, "No Solution found\n");
+			RCLCPP_WARN(get_logger(), "No Solution found");
 		}
-		else if( (ros::Time::now()-start_time)> MAX_PLAN_TIME )
+		else if( (now()-start_time).seconds() > max_plan_time_ )
 		{
-			no_sol = 1;
-			printf("Timed Out, No Solution\n");
+			no_sol = true;
+			fprintf(stderr, "Timed Out, No Solution\n");
+			RCLCPP_WARN(get_logger(), "Timed Out, %0.2f - %0.2f > %0.2f",
+			    now().seconds(), start_time.seconds(), max_plan_time_);
 		}
 		else
 		{
@@ -320,7 +333,7 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 			}
 			if(r1 == rg && c1 == cg)
 			{
-				done = 1;
+				done = true;
 				//printf("done\n");
 			}
 		}
@@ -334,7 +347,7 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 		//printf("x: %.1f, y: %.1f\n",x1,y1);
 		//fprintf(fpPath,"%.1f %.1f\n",x1,y1);
 		path.poses.clear();
-		geometry_msgs::PoseStamped wp;
+		geometry_msgs::msg::PoseStamped wp;
 		wp.pose.position.x = x1;
 		wp.pose.position.y = y1;
 		path.poses.push_back(wp);
@@ -368,11 +381,11 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 		//plot(x,y,'g')
 	}
 	if(nOpen > 500)
-	    ROS_INFO("nOpen = %d",nOpen);
+	    RCLCPP_INFO(get_logger(), "nOpen = %d",nOpen);
 
 	/*
 	path.poses.clear();
-	geometry_msgs::PoseStamped wp;
+	geometry_msgs::msg::PoseStamped wp;
 	wp.pose.position.x = 5.0;
 	wp.pose.position.y = 5.0;
 	path.poses.push_back(wp);
@@ -381,7 +394,7 @@ bool Astar::get_path(geometry_msgs::Pose pose, geometry_msgs::Pose goal,
 	*/
 	if(no_sol)
 	{
-	  ROS_WARN("Astar no solution");
+	  RCLCPP_WARN(get_logger(), "Astar no solution");
 	  return false;
 	}
 	return true;
@@ -459,21 +472,9 @@ float Astar::simp_move(float next_pos[], float x1, float y1, int motion, float d
 
 int main(int argc, char **argv)
 {
-    //Initiate ROS
-    ros::init(argc, argv, "astar");
-
-    Astar astar;
-    ROS_INFO("Starting A-star path planning");
-    //ros::spin();
-    double loop_hz = astar.get_plan_rate();
-    ros::Rate rate(loop_hz);
-
-    while(ros::ok())
-    {
-        astar.findPath();
-        ros::spinOnce();
-        rate.sleep();
-    }
-
-    return 0;
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<Astar>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
 }

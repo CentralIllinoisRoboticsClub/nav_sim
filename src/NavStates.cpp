@@ -109,21 +109,19 @@ m_close_to_obs(false)
   params.bump_db_limit = declare_parameter("bump_db_limit",  2);
   params.path_step_size = declare_parameter("path_step_size",  3);
 
-  /*
-  x_coords = declare_parameter("x_coords"); //.as_double_array();
+
+  x_coords = declare_parameter("x_coords", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  //rclcpp::Parameter double_array_param = get_parameter("x_coords");
+  //x_coords = double_array_param.as_double_array();
   //x_coords = declare_parameter<std::vector<double> >("x_coords");
   //y_coords = declare_parameter<std::vector<double> >("y_coords");
-  declare_parameter("y_coords");
-  y_coords = get_parameter("y_coords").as_double_array();
+  y_coords = declare_parameter("y_coords", std::vector<double>({5.0, 0.0}));
+  //double_array_param = get_parameter("y_coords");
+  //y_coords = double_array_param.as_double_array();
   
-  declare_parameter("waypoint_types");
-  waypoint_type_list = get_parameter("waypoint_types").as_integer_array();
-  declare_parameter("hill_waypoint_list");
-  hill_wp_list = get_parameter("hill_waypoint_list").as_integer_array();
-  //waypoint_type_list =  declare_parameter<std::vector<int64_t> >("waypoint_types");
-  //hill_wp_list = declare_parameter<std::vector<int64_t> >("hill_waypoint_list");
-  */
-  
+  waypoint_type_list = declare_parameter("waypoint_types", std::vector<int64_t>({0,0}));
+  hill_wp_list = declare_parameter("hill_waypoint_list", std::vector<int64_t>({0,0}));
+
   waypoints_are_in_map_frame = declare_parameter("waypoints_are_in_map_frame", true);
   sim_mode = declare_parameter("sim_mode", false);
 

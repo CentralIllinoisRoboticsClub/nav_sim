@@ -1,26 +1,28 @@
 # Simple ROS2 simulation for path planning with lidar
 clone or download zip to catkin_ws/src/
-`git clone https://github.com/CentralIllinoisRoboticsClub/nav_sim.git`
+`git clone --branch ros2 --single-branch https://github.com/CentralIllinoisRoboticsClub/nav_sim.git`
 
 # ROS2 WIP status
 See nav_sim/launch/nav_sim2.launch.py  
-This tests sim_bot.py, the static map, nav_sim_ros2.rviz, avoid_obs, and light_scan_sim  
+This tests sim_bot.py, the static map, nav_sim_ros2.rviz, avoid_obs, astar, and light_scan_sim  
 light_scan_sim for ros2 is at  
-`git clone https://github.com/CentralIllinoisRoboticsClub/light_scan_sim.git`  
+`git clone --branch ros2 --single-branch https://github.com/CentralIllinoisRoboticsClub/light_scan_sim.git`  
 
 avoid_obs builds the costmap using the laser scan.  
-Astar still needs converted to ros2 and will receive the costmap.  
-For now, set usePotentialFields to True for avoid_obs.  
-remap nav_states cmd_vel to ignore_vel b/c avoid_obs will use potential fields to publish cmd_vel.  
+Astar receives the costmap and publishes /path for nav_states.  
 
 colcon build --symlink-install --packages-select nav_sim  
 colcon build --symlink-install --packages-select light_scan_sim  
-ros2 launch nav_sim nav_sim2.launch.py  
+`ros2 launch nav_sim nav_sim2.launch.py`  
 
-Because of the map_server activate issue, wait 5-10 seconds for the laser scan in rviz.  
-nav_states sends an initial wp_goal of 16.0, 8.0 and the bot will move.  
+Because of the map_server activate issue, wait about 10 seconds for the laser scan in rviz.  
+nav_states sends an initial wp_goal of 17.0, 9.0 and the bot will move.  
 
 You can specify a new goal at any time using rviz 2D Goal Pose at the top.  
+
+Currently, in launch/sim_avoid_obstacles2.launch.py, avoid_obs use_PotFields = False  
+
+If you enable use_PotFields, remap nav_states cmd_vel to ignore_vel b/c avoid_obs will use potential fields to publish cmd_vel.  
 
 Note the potential fields puts a tangential CCW force field around obstacles.  
 So sometimes the bot gets sucked into going the long way around an obstacle.  
