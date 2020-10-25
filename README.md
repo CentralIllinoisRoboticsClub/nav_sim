@@ -16,7 +16,8 @@ colcon build --symlink-install --packages-select nav_sim
 colcon build --symlink-install --packages-select light_scan_sim  
 `ros2 launch nav_sim nav_sim2.launch.py`  
 
-Because of the map_server activate issue, wait about 10 seconds for the laser scan in rviz.  
+The map_server is no longer reset in the light_scan_sim node. Instead, sim_bot.py now sends a LoadMap request every 2 sec, which publishes /map.  
+Wait about 2 seconds for the laser scan in rviz.  
 nav_states sends an initial wp_goal of 17.0, 9.0 and the bot will move.  
 
 You can specify a new goal at any time using rviz 2D Goal Pose at the top.  
@@ -61,7 +62,7 @@ Another option is to put the sim_bot.py script in a separate nav_sim_py package 
 
 ## map_server activate
 After launching, the map_server has not yet published /map  
-light_scan_sim sends a change_state request to resolve this, but it takes a long time (10 sec).  
+light_scan_sim used to send a change_state request to resolve this, but it takes a long time (10 sec).  
 The following is what was done before light_scan_sim was modified:  
 In another terminal:  
 ```
@@ -69,3 +70,16 @@ ros2 lifecycle set map_server configure
 ros2 lifecycle set map_server activate
 ```
 [Reference launch file](https://github.com/ros-drivers/ros2_ouster_drivers/blob/eloquent-devel/ros2_ouster/launch/os1_launch.py)
+
+## map_server activated using launch, use LoadMap service
+The map_server is activated using commands from nav_sim2.launch.py  
+See configure and activate_map_event  
+This activates map_server and only publishes /map once.  
+Other nodes such as rviz and light_scan_sim missed /map.  
+Now, sim_bot.py sends a LoadMap request with the map yaml file  
+
+## General example of map_server from command line
+`ros2 run nav2_map_server map_server --ros-args -p "yaml_filename:=~/ros2_ws/src/nav_sim/config/big_run_map1u_clean_append6.yaml"`  
+
+`ros2 service type /map_server/load_map`  
+`ros2 interface show nav2_msgs/srv/LoadMap`  

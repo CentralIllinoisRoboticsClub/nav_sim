@@ -23,7 +23,8 @@ def generate_launch_description():
                     {'range_noise': 0.05},
                     {'angle_min': -0.39},
                     {'angle_max': 0.39},
-                    {'angle_increment': 0.052}
+                    {'angle_increment': 0.052},
+                    {'reset_map_server': False}
         ]
     )
     
