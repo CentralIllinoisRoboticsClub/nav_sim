@@ -36,11 +36,15 @@ def generate_launch_description():
                 get_package_share_directory('nav_sim') + '/launch/sim_avoid_obstacles2.launch.py')
     )
     
+    map_file = os.path.join(
+        get_package_share_directory('nav_sim'),
+        'config', 'big_run_map1u_clean_append6.yaml'
+    )
     sim_bot_node = Node(
         package="nav_sim",
         executable="sim_bot.py",
         name="sim_bot_node",
-        #parameters=[{'use_sim_time': True}]
+        parameters=[{"map_yaml_file": map_file}]
     )
     
     static_laser_tf_node = Node(
@@ -70,10 +74,6 @@ def generate_launch_description():
     
     # https://answers.ros.org/question/326070/ros2-nav2_map_server-can-not-load-map/
     # https://index.ros.org/p/nav2_map_server/
-    map_file = os.path.join(
-        get_package_share_directory('nav_sim'),
-        'config', 'big_run_map1u_clean_append6.yaml'
-    )
     map_node = LifecycleNode(
         package = 'nav2_map_server',
         executable='map_server',
@@ -125,7 +125,7 @@ def generate_launch_description():
     ld.add_action(rviz_node)
     ld.add_action(map_node)
     ld.add_action(configure_map_event)
-    #ld.add_action(activate_map_event)
+    ld.add_action(activate_map_event)
     ld.add_action(avoid_obs_launch)
     
     return ld

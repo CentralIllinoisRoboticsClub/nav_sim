@@ -21,6 +21,9 @@ import nav_sim.transformations as transformations# for euler to quat
 from tf2_ros.transform_broadcaster import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 
+from nav2_msgs.srv import LoadMap
+from functools import partial #allows more arguments to a callback
+
 import time
 import sys
 
@@ -33,6 +36,9 @@ import sys
 class SimBot(Node):
     def __init__(self):
         super().__init__('bot_simulator')
+        
+        self.declare_parameter("map_yaml_file", "")
+        self.map_yaml_file = self.get_parameter("map_yaml_file").value
         
         self.cmd_sub = self.create_subscription(
             Twist, 'cmd_vel', self.sim_cmd_callback, 1)
@@ -74,6 +80,27 @@ class SimBot(Node):
         self.noise_scan_start_time = now_stamp
         
         self.timer = self.create_timer(1./50., self.update_odom)
+        
+        self.map_timer = self.create_timer(2.0, self.call_load_map_server)
+        
+    def call_load_map_server(self):
+        client = self.create_client(LoadMap, "map_server/load_map")
+        if not client.wait_for_service(0.1):
+            self.get_logger().warn("Waiting for server map_serer/load_map")
+            return
+            
+        request = LoadMap.Request()
+        request.map_url = self.map_yaml_file
+        #self.get_logger().error("map_url: %s" % (request.map_url) )
+        future = client.call_async(request) #call or call_async
+        future.add_done_callback(partial(self.call_load_map_callback) ) # not a ros feature, just python future feature
+                    
+    def call_load_map_callback(self, future):
+        try:
+            response = future.result()
+            #self.get_logger().info('load_map result: %d' % (response.result))
+        except Exception as e:
+            self.get_logger().error("Service call failed %r" % (e,) )
     
     def dt_to_sec(self, stampA, stampB):
         return stampA.sec + stampA.nanosec * 10**-9 - stampB.sec - stampB.nanosec * 10**-9
