@@ -26,4 +26,10 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+# Install Python executables
+install(PROGRAMS
+  nav_sim/sim_bot.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_auto_package()

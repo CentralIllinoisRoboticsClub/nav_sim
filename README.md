@@ -1,12 +1,13 @@
 # Simple ROS2 simulation for path planning with lidar
-clone or download zip to catkin_ws/src/
+clone or download zip to ros2_ws/src/
 `git clone --branch ros2 --single-branch https://github.com/CentralIllinoisRoboticsClub/nav_sim.git`
+
+light_scan_sim for ros2 is at  
+`git clone --branch ros2 --single-branch https://github.com/CentralIllinoisRoboticsClub/light_scan_sim.git`  
 
 # ROS2 WIP status
 See nav_sim/launch/nav_sim2.launch.py  
 This tests sim_bot.py, the static map, nav_sim_ros2.rviz, avoid_obs, astar, and light_scan_sim  
-light_scan_sim for ros2 is at  
-`git clone --branch ros2 --single-branch https://github.com/CentralIllinoisRoboticsClub/light_scan_sim.git`  
 
 avoid_obs builds the costmap using the laser scan.  
 Astar receives the costmap and publishes /path for nav_states.  
@@ -15,17 +16,6 @@ sudo apt install ros-foxy-nav2-map-server
 colcon build --symlink-install --packages-select nav_sim  
 colcon build --symlink-install --packages-select light_scan_sim  
 `ros2 launch nav_sim nav_sim2.launch.py`  
-
-Somehow on my ros2 desktop, the single launch file worked for me. I have an executable sim_bot in ros2_ws/install/nav_sim/lib pointing to nav_sim/nav_sim/sim_bot.py  
-I discovered this does NOT work when I tested the repo on an rpi4.  
-Until I figure out how to properly allow a py script within this nav_sim package:  
-At the end of nav_sim/launch/nav_sim2.launch.py, comment:  
-`#ld.add_action(sim_bot_node)`  
-Then do the following in two terminals:  
-`python3 ~/ros2_ws/src/nav_sim/nav_sim/sim_bot.py`  
-`ros2 launch nav_sis nav_sim2.launch.py`  
-
-Another option is to put the sim_bot.py script in a separate nav_sim_py package and modify the nav_sim2.launch.py to call sim_bot from there.  
 
 Because of the map_server activate issue, wait about 10 seconds for the laser scan in rviz.  
 nav_states sends an initial wp_goal of 17.0, 9.0 and the bot will move.  
@@ -43,7 +33,19 @@ Maybe see which direction points toward the goal and use that direction.
 But if you are approaching a wall perpendicular to you, do you go left or right?  
 We talked about using an Astar + potential fields hybrid solution to help with this.  
 
-## Obsolete issues now resolved... sort of
+## py and cpp in one package
+[https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/](https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/)
+
+If the nav_sim2.launch.py says no executable sim_bot.py:  
+At the end of nav_sim/launch/nav_sim2.launch.py, comment:  
+`#ld.add_action(sim_bot_node)`  
+Then do the following in two terminals:  
+`python3 ~/ros2_ws/src/nav_sim/nav_sim/sim_bot.py`  
+`ros2 launch nav_sim nav_sim2.launch.py`  
+
+Another option is to put the sim_bot.py script in a separate nav_sim_py package and modify the nav_sim2.launch.py to call sim_bot from there.  
+
+## map_server activate
 After launching, the map_server has not yet published /map  
 See the links commented in nav_sim2.launch.py  
 In another terminal:  

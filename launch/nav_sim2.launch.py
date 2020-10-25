@@ -38,7 +38,7 @@ def generate_launch_description():
     
     sim_bot_node = Node(
         package="nav_sim",
-        executable="sim_bot",
+        executable="sim_bot.py",
         name="sim_bot_node",
         #parameters=[{'use_sim_time': True}]
     )
