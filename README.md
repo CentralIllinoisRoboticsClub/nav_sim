@@ -11,8 +11,7 @@ This tests sim_bot.py, the static map, nav_sim_ros2.rviz, avoid_obs, astar, and 
 
 avoid_obs builds the costmap using the laser scan.  
 Astar receives the costmap and publishes /path for nav_states.  
-
-sudo apt install ros-foxy-nav2-map-server  
+ 
 colcon build --symlink-install --packages-select nav_sim  
 colcon build --symlink-install --packages-select light_scan_sim  
 `ros2 launch nav_sim nav_sim2.launch.py`  
@@ -32,6 +31,21 @@ It is difficult to know whether the tangential field should be CW or CCW.
 Maybe see which direction points toward the goal and use that direction.  
 But if you are approaching a wall perpendicular to you, do you go left or right?  
 We talked about using an Astar + potential fields hybrid solution to help with this.  
+
+## ROS2 dependencies
+```
+sudo apt install ros-foxy-desktop
+sudo apt install ros-foxy-nav2-core
+sudo apt install ros-foxy-tf2
+sudo apt install ros-foxy-tf2-ros
+sudo apt install ros-foxy-nav2-amcl
+sudo apt install ros-foxy-nav2-map-server 
+
+# add to ~/.bashrc
+source /opt/ros/foxy/setup.bash
+source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+source /home/$USER/ros2_ws/install/setup.bash
+```
 
 ## py and cpp in one package
 [https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/](https://roboticsbackend.com/ros2-package-for-both-python-and-cpp-nodes/)
