@@ -31,6 +31,8 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>nav2_msgs</depend>
   
+  <exec_depend>nav2_map_server</exec_depend>
+  
    <!-- For custom messages -->
    <!-- <exec_depend>rosidl_default_runtime</exec_depend> -->
 
