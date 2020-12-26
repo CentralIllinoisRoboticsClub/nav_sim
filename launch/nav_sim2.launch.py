@@ -47,6 +47,14 @@ def generate_launch_description():
         parameters=[{"map_yaml_file": map_file}]
     )
     
+    load_map_node = Node(
+        package="nav_sim",
+        executable="load_map_client",
+        output="screen",
+        emulate_tty=True,
+        parameters=[{"map_yaml_file": map_file}]
+    )
+    
     static_laser_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -120,6 +128,7 @@ def generate_launch_description():
     # The map is only published once when activated, and scan_sim_launch misses it
     ld.add_action(scan_sim_launch)
     ld.add_action(sim_bot_node)
+    ld.add_action(load_map_node)
     ld.add_action(static_laser_tf_node)
     ld.add_action(static_map_tf_node)
     ld.add_action(rviz_node)

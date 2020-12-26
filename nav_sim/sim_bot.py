@@ -22,6 +22,7 @@ from tf2_ros.transform_broadcaster import TransformBroadcaster
 from geometry_msgs.msg import TransformStamped
 
 from nav2_msgs.srv import LoadMap
+#from nav_msgs.srv import GetMap
 from functools import partial #allows more arguments to a callback
 
 import time
@@ -79,14 +80,14 @@ class SimBot(Node):
         self.check_time = now_stamp
         self.noise_scan_start_time = now_stamp
         
-        self.timer = self.create_timer(1./50., self.update_odom)
+        self.timer = self.create_timer(1./20., self.update_odom)
         
-        self.map_timer = self.create_timer(2.0, self.call_load_map_server)
+        #self.map_timer = self.create_timer(2.0, self.call_load_map_server)
         
     def call_load_map_server(self):
         client = self.create_client(LoadMap, "map_server/load_map")
         if not client.wait_for_service(0.1):
-            self.get_logger().warn("Waiting for server map_serer/load_map")
+            self.get_logger().warn("Waiting for server map_server/load_map")
             return
             
         request = LoadMap.Request()
@@ -100,7 +101,7 @@ class SimBot(Node):
             response = future.result()
             #self.get_logger().info('load_map result: %d' % (response.result))
         except Exception as e:
-            self.get_logger().error("Service call failed %r" % (e,) )
+            self.get_logger().error("Load Map Service call failed %r" % (e,) )
     
     def dt_to_sec(self, stampA, stampB):
         return stampA.sec + stampA.nanosec * 10**-9 - stampB.sec - stampB.nanosec * 10**-9
