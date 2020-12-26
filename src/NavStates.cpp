@@ -53,6 +53,7 @@ m_omega(0.0),
 m_filt_speed(0.0),
 m_scan_collision_db_count(0),
 m_cone_detect_db_count(0),
+m_prev_heading_error(0.0),
 m_close_to_obs(false)
 {
   // https://github.com/ros-planning/navigation2/blob/foxy-devel/nav2_amcl/src/amcl_node.cpp
@@ -460,6 +461,7 @@ void NavStates::commandTo(const geometry_msgs::msg::PoseStamped& goal)
   }
   double des_yaw = getTargetHeading(goal);
   double heading_error = des_yaw - bot_yaw;
+
   if(heading_error >= M_PI)
   {
     heading_error -= 2*M_PI;
@@ -469,12 +471,25 @@ void NavStates::commandTo(const geometry_msgs::msg::PoseStamped& goal)
     heading_error += 2*M_PI;
   }
 
+  double delta_heading_error = heading_error - m_prev_heading_error;
+  if(delta_heading_error >= M_PI)
+  {
+	delta_heading_error -= 2*M_PI;
+  }
+  else if(delta_heading_error < -M_PI)
+  {
+	delta_heading_error += 2*M_PI;
+  }
+
+  m_prev_heading_error = heading_error;
+
   if(params.cmd_control_ver == 0)
   {
     // ********** FROM DiffDriveController ********
     double ka= 2.0;
+    double ka_d = 2.0;
     double kb= 0.001;
-    m_omega = ka*heading_error + kb*des_yaw;
+    m_omega = ka*heading_error + kb*des_yaw + ka_d * delta_heading_error;
     // **********************************************
   }
   else

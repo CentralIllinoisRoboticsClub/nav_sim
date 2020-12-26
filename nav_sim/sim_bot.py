@@ -69,7 +69,7 @@ class SimBot(Node):
         self.w_cmd = 0
         
         self.max_accel= 2.
-        self.max_w_dot = 2.
+        self.max_w_dot = 20.
         
         self.bot_rad = 0
         self.botx = 0

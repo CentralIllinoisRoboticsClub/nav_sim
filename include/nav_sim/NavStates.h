@@ -114,6 +114,8 @@ private:
   unsigned m_scan_collision_db_count;
   unsigned m_cone_detect_db_count;
 
+  double m_prev_heading_error;
+
   bool m_close_to_obs;
 
   rclcpp::Time state_start_time;
