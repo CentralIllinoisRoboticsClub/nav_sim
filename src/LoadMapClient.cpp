@@ -8,6 +8,7 @@ public:
     LoadMapClientNode() : Node("load_map_client")
     {
         m_map_path = declare_parameter("map_yaml_file", "default.yaml");
+        m_call_count = 0;
 
         m_timer = create_wall_timer(std::chrono::seconds(2),
                       std::bind(&LoadMapClientNode::updateServerThreads, this) );
@@ -15,7 +16,11 @@ public:
 
     void updateServerThreads()
     {
-    	m_threads.push_back(std::thread(std::bind(&LoadMapClientNode::callLoadMap, this) ));
+    	if(m_call_count < 3)
+    	{
+    		++m_call_count;
+    		m_threads.push_back(std::thread(std::bind(&LoadMapClientNode::callLoadMap, this) ));
+    	}
     }
 
     void callLoadMap()
@@ -45,6 +50,7 @@ private:
     rclcpp::TimerBase::SharedPtr m_timer;
     std::vector<std::thread> m_threads;
     std::string m_map_path;
+    uint32_t m_call_count;
     //boost::circular_buffer<std::thread> m_threads;
 };
 
