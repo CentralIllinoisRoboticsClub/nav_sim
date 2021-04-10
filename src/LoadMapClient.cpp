@@ -16,7 +16,7 @@ public:
 
     void updateServerThreads()
     {
-    	if(m_call_count < 3)
+    	if(true || m_call_count < 3)
     	{
     		++m_call_count;
     		m_threads.push_back(std::thread(std::bind(&LoadMapClientNode::callLoadMap, this) ));

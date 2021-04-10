@@ -47,9 +47,13 @@ def generate_launch_description():
     avoid_obs_node = Node(
         package="nav_sim",
         executable="avoid_obs",
+        output='screen',
+        emulate_tty='True',
+        arguments=['--ros-args', '--log-level', 'info'],
         parameters=[{'plan_rate_hz': 10.0},
                     {'map_res_m': 0.5},
                     {'map_size': 301},
+                    {'min_range': 0.3},
                     {'max_range': 40.0},
                     {'min_hill_range': 1.0},
                     {'plan_range': 35.0},
@@ -79,8 +83,16 @@ def generate_launch_description():
         ]
     )
     
+    static_map_tf_node = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_laser_tf',
+        arguments=['1.0', '0', '0', '0', '0', '0', 'map', 'odom']
+    )
+    
     ld.add_action(avoid_obs_node)
     ld.add_action(nav_states_node)
     ld.add_action(astar_node)
+    ld.add_action(static_map_tf_node)
     
     return ld

@@ -47,6 +47,8 @@ class AvoidObs: public rclcpp::Node
         bool check_for_cone_obstacle();
         void check_known_obstacles();
 
+        rclcpp::QoS qos_;
+
         rclcpp::TimerBase::SharedPtr m_timer;
 
         std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid> > costmap_pub_, pf_obs_pub_;
@@ -82,6 +84,7 @@ class AvoidObs: public rclcpp::Node
         double plan_rate_; //Default 10 Hz, how often we use potential fields to update cmd_vel
         double map_res_; //Default 0.5 meters
         int n_width_, n_height_;
+        double min_range_;
         double max_range_;
         double min_hill_range_;
         double plan_range_;

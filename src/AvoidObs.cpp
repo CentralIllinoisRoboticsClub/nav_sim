@@ -20,7 +20,8 @@ using std::placeholders::_1;
 
 //Constructor
 AvoidObs::AvoidObs() :
-    Node("avoid_obs")
+    Node("avoid_obs"),
+    qos_(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_sensor_data))
 {
     // https://github.com/ros-planning/navigation2/blob/foxy-devel/nav2_amcl/src/amcl_node.cpp
     tfBuffer = std::make_shared<tf2_ros::Buffer>(get_clock());
@@ -39,7 +40,7 @@ AvoidObs::AvoidObs() :
     obs_cone_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>("obs_cone_pose",1);
 
     //Topic you want to subscribe
-    scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", 50, std::bind(&AvoidObs::scanCallback, this, _1)); //receive laser scan
+    scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::scanCallback, this, _1)); //receive laser scan
     odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&AvoidObs::odomCallback, this, _1));
 
     // "/move_base_simple/goal"
@@ -54,6 +55,7 @@ AvoidObs::AvoidObs() :
     map_res_ = declare_parameter("map_res_m", 0.5);
     n_width_ = declare_parameter("map_size", 200);
     n_height_ = n_width_;
+    min_range_ = declare_parameter("min_range", 0.05);
     max_range_ = declare_parameter("max_range", 40.0);
     min_hill_range_ = declare_parameter("min_hill_range", 1.0);
     plan_range_ = declare_parameter("plan_range_m", 40.0);
@@ -350,6 +352,7 @@ int AvoidObs::get_cost(int ix, int iy)
 
 void AvoidObs::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
 {
+  //RCLCPP_WARN(get_logger(), "odomCallback");
 	bot_pose.position = odom->pose.pose.position;
 	bot_pose.orientation = odom->pose.pose.orientation;
 
@@ -366,52 +369,94 @@ void AvoidObs::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr dat
 
 void AvoidObs::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) //use a point cloud instead, use laser2pc.launch
 {
+  //RCLCPP_WARN(get_logger(), "scanCallback");
   //ROS_INFO("NEW SCAN");
 	// Transform scan to map frame, clear and fill costmap
   //listener.waitForTransform("laser", "odom", scan->header.stamp, ros::Duration(10.0)); // ros::Time(0) causes exceptions
+
+  // https://answers.ros.org/question/273205/transfer-a-pointxyz-between-frames/
+  geometry_msgs::msg::TransformStamped transformStamped;
   try{
-    tfBuffer->lookupTransform("laser", "odom", scan->header.stamp, rclcpp::Duration(10.0));
+    //transformStamped = tfBuffer->lookupTransform("laser", "odom", scan->header.stamp, rclcpp::Duration(0.05));
+    transformStamped = tfBuffer->lookupTransform("odom", "laser", rclcpp::Time(0) );
   } catch (tf2::TransformException &ex) {
     RCLCPP_WARN(get_logger(), "AvoidObs: %s",ex.what());
+    return;
   }
+  //RCLCPP_WARN(get_logger(), "Post get transform");
 
 	geometry_msgs::msg::PointStamped laser_point, odom_point;
 	laser_point.header.frame_id = "laser";
 	laser_point.header.stamp = scan->header.stamp;//ros::Time();
 	laser_point.point.z = 0;
 	
+	/*
+	laser_point.point.x = 1.0;
+	laser_point.point.y = 0.0;
+	tf2::doTransform(laser_point, odom_point, transformStamped);
+	RCLCPP_WARN(get_logger(), "out1 %.2f, %.2f", odom_point.point.x, odom_point.point.y);
+
+	odom_point.header.frame_id = "odom";
+	tf2::doTransform(laser_point, odom_point, transformStamped);
+	RCLCPP_WARN(get_logger(), "out2 %.2f, %.2f", odom_point.point.x, odom_point.point.y);
+	*/
+
 	for (int i = 0; i < scan->ranges.size();i++)
 	{
 	    float range = scan->ranges[i];
+	    if(range < min_range_)
+	    	continue;
+
+	    bool clear_only = false;
+	    if (not std::isfinite(range))
+	    {
+	      range = max_range_;
+	      clear_only = true;
+	      continue;
+	    }
+
 	    float angle  = scan->angle_min +(float(i) * scan->angle_increment);
 
 	    //clear map cells
 	    // only clear at range >= 0.5 meters
-        for (double r = 0.5; r < (range - map_res_*2.0); r += map_res_)
+	    //RCLCPP_WARN(get_logger(), "CLEAR");
+        for (double r = 0.1; r < (range - map_res_*2.0); r += map_res_)
         {
             double angle_step = map_res_ / r;
+            //RCLCPP_WARN(get_logger(), "map_res_ %.2f, r %.2f, step %.3f", map_res_, r, angle_step);
             //clearing as we pass obstacles, try angle_increment/3 vs /2 (reduce clearing fov per laser)
-            for (double a = (angle - scan->angle_increment / 2); a < (angle + scan->angle_increment / 2); a += angle_step)
+
+            for (double a = (angle - scan->angle_increment / 6); a < (angle + scan->angle_increment / 6); a += angle_step)
             {
+                //RCLCPP_WARN(get_logger(),  "\na %.2f, limit %.2f", a, angle + scan->angle_increment/2);
                 laser_point.point.x = r * cos(a);
                 laser_point.point.y = r * sin(a);
+                // Should now be able to remove try catch here
                 try
                 {
+                	//RCLCPP_WARN(get_logger(), "preupdateCell");
                     //listener.transformPoint("odom", laser_point,odom_point);
-                    tfBuffer->transform(laser_point, odom_point, "odom", tf2::durationFromSec(1.0));
+                    //tfBuffer->transform(laser_point, odom_point, "odom", tf2::durationFromSec(1.0));
+                    tf2::doTransform(laser_point, odom_point, transformStamped);
                     update_cell(odom_point.point.x, odom_point.point.y,
                             clear_decrement_); //CLEAR_VAL_DECREASE
                 }
                 catch (tf2::TransformException& ex)
                 {
                     int xa;
-                    //RCLCPP_ERROR(get_logger(), "AvoidObs clear Received an exception trying to transform a point : %s", ex.what());
+                    RCLCPP_ERROR(get_logger(), "AvoidObs clear Received an exception trying to transform a point : %s", ex.what());
                 }
-
             }
         }
 
+        if(clear_only)
+        {
+          continue;
+        }
+
+      //RCLCPP_WARN(get_logger(), "FILL");
 	    // fill obstacle cells
+        bool good_tf = true;
 	    if(range < scan_range)
 	    {
 			laser_point.point.x = range*cos(angle) ;
@@ -422,14 +467,21 @@ void AvoidObs::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) /
 				++count;
 				try{
 					//listener.transformPoint("odom", laser_point, odom_point);
-					tfBuffer->transform(laser_point, odom_point, "odom", tf2::durationFromSec(1.0));
+					//tfBuffer->transform(laser_point, odom_point, "odom", tf2::durationFromSec(1.0));
+				  tf2::doTransform(laser_point, odom_point, transformStamped);
 					update_cell(odom_point.point.x, odom_point.point.y, fill_increment_);
+					good_tf = true; // Without this, must have good tf on first try
 					break;
 				}
 				catch(tf2::TransformException& ex){
+					good_tf = false;
 					int xa;
-					//RCLCPP_ERROR(get_logger(), "AvoidObs fill Received an exception trying to transform a point : %s", ex.what());
+					RCLCPP_ERROR(get_logger(), "AvoidObs fill Received an exception trying to transform a point : %s", ex.what());
 				}
+			}
+			if(!good_tf)
+			{
+				break;
 			}
 	    }
 	}
@@ -480,6 +532,7 @@ void AvoidObs::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) /
     // ensure costmap has known obstacles
     check_known_obstacles();
 
+    //RCLCPP_WARN(get_logger(), "PUBLISH COSTMAP");
     costmap.header.stamp = scan->header.stamp;
     costmap_pub_->publish(costmap);
 }
