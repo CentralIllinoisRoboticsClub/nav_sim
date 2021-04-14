@@ -55,6 +55,8 @@ class AvoidObs: public rclcpp::Node
         std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist> > cmd_pub_;
         std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > obs_cone_pub_;
 
+        std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Int16> > pf_wp_update_pub_;
+
         std::shared_ptr<rclcpp::Subscription<sensor_msgs::msg::LaserScan> > scan_sub_;
         std::shared_ptr<rclcpp::Subscription<nav_msgs::msg::Odometry> > odom_sub_;
         std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > goal_sub_;

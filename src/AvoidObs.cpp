@@ -39,6 +39,8 @@ AvoidObs::AvoidObs() :
 
     obs_cone_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>("obs_cone_pose",1);
 
+    pf_wp_update_pub_ = create_publisher<std_msgs::msg::Int16>("pf_wp_update",1);
+
     //Topic you want to subscribe
     scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::scanCallback, this, _1)); //receive laser scan
     odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&AvoidObs::odomCallback, this, _1));
@@ -71,6 +73,17 @@ AvoidObs::AvoidObs() :
     cone_obs_thresh_ = declare_parameter("cone_obs_thresh", 20);
     max_num_known_obstacles_ = declare_parameter("max_num_known_obstacles", 20);
     known_obstacle_time_limit_ = declare_parameter("known_obstacle_time_limit", 30.0);
+
+    // Potential Fields Params
+    bool useLinear = declare_parameter("useLinear", true);
+    float R1 = declare_parameter("R1", 1.0);
+    float R2 = declare_parameter("R2", 2.0);
+    float Kt = declare_parameter("Kt", 10.0);;
+    float offset_gamma = declare_parameter("offset_gamma", M_PI/2);
+    float max_heading_error = declare_parameter("max_heading_error", M_PI/6);
+    float Kw = declare_parameter("Kw", 1.5);
+    float des_speed = declare_parameter("des_speed", 1.0);
+    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed);
 
     scan_range = max_range_;
 
@@ -307,6 +320,7 @@ void AvoidObs::update_plan()
 		//testing hard coded obstacle
 		// revealed need to use round for x,y to ix,iy and also offset map by res/2
 		//pf.obs_list.clear();
+		/*
 		PotentialFields::Obstacle obs;
 		float x = 7.0, y=1.0;
 		int ix, iy;
@@ -326,13 +340,23 @@ void AvoidObs::update_plan()
         get_map_indices(obs.x, obs.y, ix, iy);
         pfObs.data[iy*n_width_ + ix] = 50;
         pf.obs_list.push_back(obs);
+    */
 		// end testing hard coded obstacle list
 		bot_yaw = tf2::getYaw(bot_pose.orientation); //get_yaw(bot_pose);
-		geometry_msgs::msg::Twist cmd = pf.update_cmd(bot_yaw);
+		bool update_wp = false;
+		geometry_msgs::msg::Twist cmd = pf.update_cmd(bot_yaw, update_wp);
 		//ROS_INFO("bot_yaw: %0.2f", bot_yaw);
 
 		cmd_pub_->publish(cmd);
 		pf_obs_pub_->publish(pfObs);
+
+		if(update_wp)
+		{
+		  //RCLCPP_INFO(get_logger(), "PF Sent Update Waypoint");
+		  std_msgs::msg::Int16 update_msg;
+		  update_msg.data = true;
+		  pf_wp_update_pub_->publish(update_msg);
+		}
 	}
 }
 

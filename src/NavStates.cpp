@@ -22,6 +22,7 @@
 #define STATE_TURN_TO_TARGET 1
 #define STATE_TOUCH_TARGET 2
 #define STATE_SEARCH_IN_PLACE 3
+#define STATE_TRACK_MOW_PATH 10
 
 #define WP_TYPE_INTER 0
 #define WP_TYPE_CONE 1
@@ -54,7 +55,8 @@ m_filt_speed(0.0),
 m_scan_collision_db_count(0),
 m_cone_detect_db_count(0),
 m_prev_heading_error(0.0),
-m_close_to_obs(false)
+m_close_to_obs(false),
+m_update_pf_waypoint(false)
 {
   // https://github.com/ros-planning/navigation2/blob/foxy-devel/nav2_amcl/src/amcl_node.cpp
   tfBuffer = std::make_shared<tf2_ros::Buffer>(get_clock());
@@ -85,6 +87,8 @@ m_close_to_obs(false)
   path_sub_ = create_subscription<nav_msgs::msg::Path>("path",5, std::bind(&NavStates::pathCallback, this, _1));
   map_to_odom_update_sub_ = create_subscription<std_msgs::msg::Int16>("map_to_odom_update", 1, std::bind(&NavStates::mapToOdomUpdateCallback, this, _1));
   
+  pf_wp_update_sub_ = create_subscription<std_msgs::msg::Int16>("pf_wp_update", 1, std::bind(&NavStates::pfWayPointUpdateCallback, this, _1));
+
 
   params.plan_rate = declare_parameter("plan_rate_hz", 10.0);
   params.use_PotFields = declare_parameter("use_PotFields", false);
@@ -126,6 +130,13 @@ m_close_to_obs(false)
   waypoints_are_in_map_frame = declare_parameter("waypoints_are_in_map_frame", true);
   sim_mode = declare_parameter("sim_mode", false);
 
+  is_mow_boundary = declare_parameter("is_mow_boundary", false);
+  mow_ccw = declare_parameter("mow_ccw", true);
+  mow_width = declare_parameter("mow_width", 0.4);
+  mow_wp_spacing = declare_parameter("mow_wp_spacing", 2.0);
+  mow_inside_heading_offset = mow_ccw ? M_PI/2 : -M_PI/2;
+  RCLCPP_INFO(get_logger(), "mow inside heading offset = %.2f", mow_inside_heading_offset);
+
   //listener.setExtrapolationLimit(ros::Duration(0.1));
   //listener.waitForTransform("laser", "odom", rclcpp::Time(0), ros::Duration(10.0)); //TODO: rclcpp::Time(0) or ::now() ??
   //listener.waitForTransform("base_link", "odom", rclcpp::Time(0), ros::Duration(10.0));
@@ -157,16 +168,137 @@ m_close_to_obs(false)
   camera_cone_pose.pose.orientation.w = 1.0;
   obs_cone_pose.pose.orientation.w = 1.0;
 
-  m_num_waypoints = x_coords.size();
-  for(unsigned k=0; k<m_num_waypoints; ++k)
+  if(!is_mow_boundary)
   {
-    geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
-    m_waypoints.push_back(wp);
+    m_num_waypoints = x_coords.size();
+    for(unsigned k=0; k<m_num_waypoints; ++k)
+    {
+      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      m_waypoints.push_back(wp);
+    }
+    m_index_wp = 0;
   }
-  m_index_wp = 0;
+  else // mow boundary, make more frequent waypoints
+  {
+    float offset_gamma = mow_inside_heading_offset;
+    std::vector<geometry_msgs::msg::Point> bound1, bound2, bound_offset;
+    bound1.clear(); bound2.clear(); bound_offset.clear();
+    unsigned numKeyPts = x_coords.size();
+    for(unsigned k=0; k<numKeyPts; ++k)
+    {
+      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      bound1.push_back(wp);
+    }
+
+    // create up to nBound shrinking boundary loops
+    float c = mow_wp_spacing;
+    float d = mow_width;
+    unsigned nBound = 10;
+    m_waypoints.clear();
+    bool done = false;
+    for(unsigned loopNum=0; loopNum<nBound; ++loopNum)
+    {
+      if(done)
+        break;
+
+      for(unsigned bk=0; bk<numKeyPts; ++bk)
+      {
+        const geometry_msgs::msg::Point& p = bound1[bk];
+        const geometry_msgs::msg::Point& n = (bk==(numKeyPts-1) ? bound1.front() : bound1[bk+1]);
+        m_waypoints.push_back(p);
+        std::cout << "keyPoint," << p.x << "," << p.y << "\n";
+        if(isnan(p.y))
+        {
+          done = true;
+          break;
+        }
+
+        float dx = n.x - p.x;
+        float dy = n.y - p.y;
+        float dist_limit = sqrt(dx*dx + dy*dy);
+        if(dist_limit < d)
+        {
+          done = true;
+          break;
+        }
+        float ux = dx/dist_limit;
+        float uy = dy/dist_limit;
+
+        // Next loop boundary points
+        if(loopNum == 0)
+        {
+          // Prepare next boundary points
+          geometry_msgs::msg::Point prev;
+          if(bk==0)
+            prev = bound1.back();
+          else
+            prev = bound1[bk-1];
+          float prev_dx = p.x - prev.x;
+          float prev_dy = p.y - prev.y;
+          float mag = sqrt(prev_dx*prev_dx + prev_dy*prev_dy);
+          float vx = prev_dx / mag;
+          float vy = prev_dy / mag;
+          float netx = ux + vx;
+          float nety = uy + vy;
+          float net_mag = sqrt(netx*netx + nety*nety);
+          geometry_msgs::msg::Point t;
+          t.x = -nety/net_mag*sin(offset_gamma);
+          t.y =  netx/net_mag*sin(offset_gamma);
+          bound_offset.push_back(t);
+        }
+        else
+        {
+          if(bound_offset.size() != numKeyPts)
+          {
+            RCLCPP_INFO(get_logger(), "BOUND OFFSETS ERROR, MOW BOUNDARY FAILED");
+          }
+        }
+
+        geometry_msgs::msg::Point p2;
+        p2.x = p.x + d*bound_offset[bk].x;
+        p2.y = p.y + d*bound_offset[bk].y;
+        bound2.push_back(p2);
+        // End next loop boundary points
+
+        geometry_msgs::msg::Point cp;
+        cp.x = p.x + c*ux;
+        cp.y = p.y + c*uy;
+        float dist = c;
+
+        // finer points between p and n
+        while(dist < (dist_limit - c/2))
+        {
+          m_waypoints.push_back(cp);
+          std::cout << "cp," << cp.x << "," << cp.y << "\n";
+          if(isnan(cp.y))
+          {
+            done = true;
+            break;
+          }
+          cp.x += c*ux;
+          cp.y += c*uy;
+          dist += c;
+        }
+      }
+
+      if(!done)
+      {
+        bound1 = bound2;
+        bound2.clear();
+      }
+    }
+
+    m_num_waypoints = m_waypoints.size();
+  } // end if mow boundary
+
   update_waypoint();
 
   m_state = STATE_TRACK_PATH;
+  if(is_mow_boundary)
+  {
+    RCLCPP_INFO(get_logger(), "MOW BOUNDARY");
+    m_state = STATE_TRACK_MOW_PATH;
+  }
 
   state_init();
 
@@ -180,8 +312,11 @@ void NavStates::update_waypoint()
 {
   m_first_search = true; // used to reset the m_init_search_time in search_in_place state
   map_goal_pose.header.stamp = now();
-  m_current_waypoint_type = waypoint_type_list[m_index_wp];
-  m_current_hill_type = hill_wp_list[m_index_wp];
+  if(!is_mow_boundary)
+  {
+    m_current_waypoint_type = waypoint_type_list[m_index_wp];
+    m_current_hill_type = hill_wp_list[m_index_wp];
+  }
   map_goal_pose.pose.position.x = m_waypoints[m_index_wp].x;
   map_goal_pose.pose.position.y = m_waypoints[m_index_wp].y;
   camera_cone_pose_in_map = map_goal_pose;
@@ -373,6 +508,12 @@ void NavStates::mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr ms
   camera_cone_pose_in_map.header.stamp = now();
 }
 
+void NavStates::pfWayPointUpdateCallback(const std_msgs::msg::Int16::SharedPtr msg)
+{
+  if(m_init_wp_published)
+    m_update_pf_waypoint = true;
+}
+
 double NavStates::get_plan_rate()
 {
   return params.plan_rate;
@@ -517,6 +658,24 @@ void NavStates::state_init()
 double NavStates::get_time_in_state()
 {
   return (now() - state_start_time).seconds();
+}
+
+void NavStates::track_mow_path()
+{
+  //RCLCPP_INFO(get_logger(), "TRACK MOW PATH");
+  if(!m_init_wp_published)
+  {
+    update_waypoint();
+  }
+
+  // Next waypoint
+  if(m_update_pf_waypoint)
+  {
+    RCLCPP_INFO(get_logger(), "UPDATE PF WAYPOINT");
+    m_update_pf_waypoint = false;
+    m_init_wp_published = false;
+    update_waypoint();
+  }
 }
 
 void NavStates::track_path()
@@ -691,6 +850,9 @@ void NavStates::update_states()
 {
   int prev_state = m_state;
   switch(m_state) {
+  case STATE_TRACK_MOW_PATH:
+    track_mow_path();
+    break;
   case STATE_TRACK_PATH:
     track_path();
     break;

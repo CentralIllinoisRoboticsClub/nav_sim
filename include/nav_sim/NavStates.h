@@ -42,6 +42,8 @@ private:
   void pathCallback(const nav_msgs::msg::Path::SharedPtr path_in);
   void mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr data);
 
+  void pfWayPointUpdateCallback(const std_msgs::msg::Int16::SharedPtr data);
+
   void update_plan();
   bool check_for_cone_obstacle();
   void update_waypoint();
@@ -59,6 +61,7 @@ private:
 
   // A function for each state in the state machine
   void track_path();
+  void track_mow_path();
   void retreat();
   void search_in_place();
   void turn_to_target();
@@ -86,6 +89,8 @@ private:
   std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > bump_sub_;
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseStamped> > obs_cone_sub_;
   std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > map_to_odom_update_sub_;
+
+  std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > pf_wp_update_sub_;
 
   geometry_msgs::msg::PoseStamped bot_pose, map_goal_pose, odom_goal_pose;
   geometry_msgs::msg::PoseStamped camera_cone_pose, obs_cone_pose, camera_cone_pose_in_map;
@@ -117,6 +122,8 @@ private:
   double m_prev_heading_error;
 
   bool m_close_to_obs;
+
+  bool m_update_pf_waypoint;
 
   rclcpp::Time state_start_time;
   rclcpp::Time m_bump_time;
@@ -159,6 +166,12 @@ private:
   std::vector<int64_t> hill_wp_list;
   bool waypoints_are_in_map_frame;
   bool sim_mode;
+
+  bool is_mow_boundary;
+  bool mow_ccw;
+  double mow_width;
+  double mow_wp_spacing;
+  double mow_inside_heading_offset;
 
 };
 

@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from numpy import number
+from math import pi
 
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -11,6 +12,8 @@ def generate_launch_description():
     nav_states_node = Node(
         package="nav_sim",
         executable="nav_states",
+        output='screen',
+        emulate_tty='True',
         parameters=[{'plan_rate_hz': 10.0},
                     {'use_PotFields': False},
                     {'close_cone_to_bot_dist': 11.0},
@@ -36,12 +39,16 @@ def generate_launch_description():
                     {'bump_db_limit': 2},
                     {'path_step_size': 3},
                     {'waypoints_are_in_map_frame': True},
-                    {'x_coords':          [17.0, 5.0, 7.0]},
-                    {'y_coords':          [9.0, 29.0, 1.0]},
+                    {'x_coords':          [7.0, 15.0, 15.0,  7.0]},
+                    {'y_coords':          [2.0,  2.0, 10.0, 10.0]},
                     {'waypoint_types':     [0,   0,    0]},
-                    {'hill_waypoint_list': [0,   0,    0]}
+                    {'hill_waypoint_list': [0,   0,    0]},
+                    {'is_mow_boundary': True},
+                    {'mow_ccw': True},
+                    {'mow_width': 0.4},
+                    {'mow_wp_spacing': 2.0},
         ],
-        #remappings=[('cmd_vel', 'ignore_cmd_vel')]
+        remappings=[('cmd_vel', 'ignore_cmd_vel')]
     )
     
     avoid_obs_node = Node(
@@ -63,11 +70,19 @@ def generate_launch_description():
                     {'inflation_factor': 2},
                     {'reinflate_cost_thresh': 30},
                     {'reinflate_radius': 5.0},
-                    {'use_PotFields': False},
+                    {'use_PotFields': True},
                     {'cone_search_radius': 1.0},
                     {'cone_obs_thresh': 0},
                     {'max_num_known_obstacles': 30},
-                    {'known_obstacle_time_limit': 30.0}
+                    {'known_obstacle_time_limit': 30.0},
+                    {'useLinear': True},
+                    {'R1': 1.2},
+                    {'R2': 2.0},
+                    {'Kt': 10.0},
+                    {'offset_gamma': pi/2},
+                    {'max_heading_error': pi/6},
+                    {'Kw': 1.0},
+                    {'des_speed': 1.0}
         ]
     )
     
@@ -87,12 +102,12 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_laser_tf',
-        arguments=['1.0', '0', '0', '0', '0', '0', 'map', 'odom']
+        arguments=['0.0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
     
     ld.add_action(avoid_obs_node)
     ld.add_action(nav_states_node)
-    ld.add_action(astar_node)
-    ld.add_action(static_map_tf_node)
+    #ld.add_action(astar_node)
+    #ld.add_action(static_map_tf_node)
     
     return ld

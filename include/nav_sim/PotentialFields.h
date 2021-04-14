@@ -31,18 +31,35 @@ public:
 	std::vector<Obstacle> obs_list;
 	geometry_msgs::msg::Point bot, goal;
 
+	geometry_msgs::msg::Twist update_cmd(float bot_yaw, bool& update_wp);
 
-
-	geometry_msgs::msg::Twist update_cmd(float bot_yaw);
+	void setParams(bool useLinear, float R1, float R2, float Kt, float offset_gamma, float max_heading_error, float Kw, float des_speed)
+	{
+	  m_useLinear = useLinear;
+	  m_R1 = R1;
+	  m_R2 = R2;
+	  m_Kt = Kt;
+	  m_gamma = offset_gamma;
+	  m_max_heading_error = max_heading_error;
+	  m_Kw = Kw;
+	  m_des_speed = des_speed;
+	}
 
 private:
 	float c_attr, max_Fattr;
 	float c_repel, obs_d0, obs_d_retreat;
 	float alpha;
+
+	bool m_useLinear;
+	float m_R1, m_R2, m_Kt;
+	float m_gamma, m_max_heading_error;
+	float m_Kw;
+	float m_des_speed;
 	geometry_msgs::msg::Vector3 get_Fattr();
 	geometry_msgs::msg::Vector3 get_Frepel(geometry_msgs::msg::Vector3 Fattr);
 	geometry_msgs::msg::Vector3 get_Frepel2(geometry_msgs::msg::Vector3 Fattr);
 	geometry_msgs::msg::Vector3 get_vxvy();
+	geometry_msgs::msg::Vector3 get_vxvy_mow(float bot_yaw, bool &reverse, bool &met_goal, float& goal_dist);
 	float get_cos_2d(float ax, float ay, float bx, float by);
 
 };
