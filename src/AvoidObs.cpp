@@ -83,7 +83,8 @@ AvoidObs::AvoidObs() :
     float max_heading_error = declare_parameter("max_heading_error", M_PI/6);
     float Kw = declare_parameter("Kw", 1.5);
     float des_speed = declare_parameter("des_speed", 1.0);
-    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed);
+    float min_omega = declare_parameter("min_omega", 0.5);
+    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega);
 
     scan_range = max_range_;
 

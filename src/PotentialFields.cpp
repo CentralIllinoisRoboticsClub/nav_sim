@@ -14,7 +14,8 @@ PotentialFields::PotentialFields() :
 	m_R1(1.0), m_R2(2.0), m_Kt(10.0),
 	m_gamma(M_PI/2), m_max_heading_error(M_PI/6),
 	m_Kw(1.5),
-	m_des_speed(1.0)
+	m_des_speed(1.0),
+        m_min_omega(0.5)
 {
 	obs_list.clear();
 	bot.x = 0;
@@ -74,7 +75,15 @@ geometry_msgs::msg::Twist PotentialFields::update_cmd(float bot_yaw, bool& updat
 	  {
 	    cmd.linear.x = m_des_speed * (1.0 - fabs(yaw_error) / m_max_heading_error);
 	  }
-	  cmd.angular.z = m_Kw*yaw_error;
+          float omega = m_Kw*yaw_error;
+          if(cmd.linear.x <= 0.2 && fabs(omega) < m_min_omega)
+          {
+            if(omega < 0.0)
+              omega = -m_min_omega;
+            else
+              omega = m_min_omega;
+          }
+	  cmd.angular.z = omega;
 	  if(reverse)
 	  {
 	    cmd.linear.x = -m_des_speed/2;
@@ -105,7 +114,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
   float gdx = goal.x - bot.x;
   float gdy = goal.y - bot.y;
   goal_dist = sqrt(gdx*gdx + gdy*gdy);
-  if(goal_dist < 0.3)
+  if(goal_dist < 0.6)
   {
     met_goal = true;
     return vel;

@@ -33,7 +33,7 @@ public:
 
 	geometry_msgs::msg::Twist update_cmd(float bot_yaw, bool& update_wp);
 
-	void setParams(bool useLinear, float R1, float R2, float Kt, float offset_gamma, float max_heading_error, float Kw, float des_speed)
+	void setParams(bool useLinear, float R1, float R2, float Kt, float offset_gamma, float max_heading_error, float Kw, float des_speed, float min_omega)
 	{
 	  m_useLinear = useLinear;
 	  m_R1 = R1;
@@ -43,6 +43,7 @@ public:
 	  m_max_heading_error = max_heading_error;
 	  m_Kw = Kw;
 	  m_des_speed = des_speed;
+          m_min_omega = min_omega;
 	}
 
 private:
@@ -55,6 +56,7 @@ private:
 	float m_gamma, m_max_heading_error;
 	float m_Kw;
 	float m_des_speed;
+        float m_min_omega;
 	geometry_msgs::msg::Vector3 get_Fattr();
 	geometry_msgs::msg::Vector3 get_Frepel(geometry_msgs::msg::Vector3 Fattr);
 	geometry_msgs::msg::Vector3 get_Frepel2(geometry_msgs::msg::Vector3 Fattr);

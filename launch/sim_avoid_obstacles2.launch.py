@@ -82,7 +82,8 @@ def generate_launch_description():
                     {'offset_gamma': pi/2},
                     {'max_heading_error': pi/6},
                     {'Kw': 1.0},
-                    {'des_speed': 1.0}
+                    {'des_speed': 1.0},
+                    {'min_omega': 0.7}
         ]
     )
     
@@ -101,13 +102,13 @@ def generate_launch_description():
     static_map_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='static_laser_tf',
+        name='static_map_tf',
         arguments=['0.0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
     
     ld.add_action(avoid_obs_node)
     ld.add_action(nav_states_node)
     #ld.add_action(astar_node)
-    #ld.add_action(static_map_tf_node)
+    ld.add_action(static_map_tf_node)
     
     return ld
