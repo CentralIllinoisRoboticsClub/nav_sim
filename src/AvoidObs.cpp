@@ -437,7 +437,7 @@ void AvoidObs::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) /
 	    {
 	      range = max_range_;
 	      clear_only = true;
-	      continue;
+	      //continue;
 	    }
 
 	    float angle  = scan->angle_min +(float(i) * scan->angle_increment);

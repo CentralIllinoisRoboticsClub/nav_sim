@@ -39,13 +39,23 @@ def generate_launch_description():
                     {'bump_db_limit': 2},
                     {'path_step_size': 3},
                     {'waypoints_are_in_map_frame': True},
-                    {'x_coords':          [7.0, 15.0, 15.0,  7.0]},
-                    {'y_coords':          [2.0,  2.0, 10.0, 10.0]},
+                    #{'x_coords':          [14.5, -7.5,  -7.5,  14.5]}, # behind garage
+                    #{'y_coords':          [-3.0, -3.0, -18.0,-18.0]},
+                    #{'x_coords':          [34.0,  34.0,  28.0, 28.0]}, # back eastside
+                    #{'y_coords':          [18.0, -10.0, -10.0, 18.0]},
+                    {'x_coords':          [14.5,  14.5, 29.0, 29.0]}, # back between trees
+                    {'y_coords':          [ 10.0, -7.5, -7.5, 10.0]},
+                    #{'x_coords':          [11.5, 11.5, 25.0, 25.0]}, # front between trees
+                    #{'y_coords':          [33.0, 45.0, 45.0, 33.0]},
+                    #{'x_coords':          [36.0, 26.0,  26.0, 36.0]},
+                    #{'y_coords':          [23.0, 23.0, 12.0, 12.0]},
+                    #{'x_coords':          [14.0, 14.0,  23.0, 23.0]},
+                    #{'y_coords':          [ 0.0, 10.0,  10.0,  0.0]},
                     {'waypoint_types':     [0,   0,    0]},
                     {'hill_waypoint_list': [0,   0,    0]},
                     {'is_mow_boundary': True},
                     {'mow_ccw': True},
-                    {'mow_width': 0.4},
+                    {'mow_width': 0.2}, #0.2
                     {'mow_wp_spacing': 2.0},
         ],
         remappings=[('cmd_vel', 'ignore_cmd_vel')]
@@ -80,10 +90,10 @@ def generate_launch_description():
                     {'R2': 2.0},
                     {'Kt': 10.0},
                     {'offset_gamma': pi/2},
-                    {'max_heading_error': pi/6},
-                    {'Kw': 1.0},
-                    {'des_speed': 1.0},
-                    {'min_omega': 0.7}
+                    {'max_heading_error': pi/3},
+                    {'Kw': 1.3},
+                    {'des_speed': 1.5},
+                    {'min_omega': 0.5}
         ]
     )
     

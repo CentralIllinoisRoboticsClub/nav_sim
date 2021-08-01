@@ -75,14 +75,14 @@ geometry_msgs::msg::Twist PotentialFields::update_cmd(float bot_yaw, bool& updat
 	  {
 	    cmd.linear.x = m_des_speed * (1.0 - fabs(yaw_error) / m_max_heading_error);
 	  }
-          float omega = m_Kw*yaw_error;
-          if(cmd.linear.x <= 0.2 && fabs(omega) < m_min_omega)
-          {
-            if(omega < 0.0)
-              omega = -m_min_omega;
-            else
-              omega = m_min_omega;
-          }
+	  float omega = m_Kw*yaw_error;
+	  if(cmd.linear.x <= 0.5 && fabs(omega) < m_min_omega)
+	  {
+	    if(omega < 0.0)
+	      omega = -m_min_omega;
+	    else
+	      omega = m_min_omega;
+	  }
 	  cmd.angular.z = omega;
 	  if(reverse)
 	  {
@@ -114,7 +114,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
   float gdx = goal.x - bot.x;
   float gdy = goal.y - bot.y;
   goal_dist = sqrt(gdx*gdx + gdy*gdy);
-  if(goal_dist < 0.6)
+  if(goal_dist < 0.7)
   {
     met_goal = true;
     return vel;

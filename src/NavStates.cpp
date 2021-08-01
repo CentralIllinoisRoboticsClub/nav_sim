@@ -168,6 +168,8 @@ m_update_pf_waypoint(false)
   camera_cone_pose.pose.orientation.w = 1.0;
   obs_cone_pose.pose.orientation.w = 1.0;
 
+  bool use_lanes = true;
+
   if(!is_mow_boundary)
   {
     m_num_waypoints = x_coords.size();
@@ -178,6 +180,62 @@ m_update_pf_waypoint(false)
     }
     m_index_wp = 0;
   }
+  else if(use_lanes)
+  {
+    std::vector<geometry_msgs::msg::Point> bound1;
+    bound1.clear();
+    m_waypoints.clear();
+    unsigned numKeyPts = x_coords.size();
+    for(unsigned k=0; k<numKeyPts; ++k)
+    {
+      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      m_waypoints.push_back(wp);
+      bound1.push_back(wp);
+    }
+
+    if(numKeyPts == 4)
+    {
+      m_waypoints.clear();
+      float c = mow_wp_spacing;
+      float d = mow_width;
+      geometry_msgs::msg::Point pa, pb, pc;
+      pa = bound1[0]; pb = bound1[1]; pc = bound1[2];
+      float dx = pb.x - pa.x;
+      float dy = pb.y - pa.y;
+      float distDown = sqrt(dx*dx + dy*dy);
+      float xDown = dx/distDown;
+      float yDown = dy/distDown;
+
+      dx = pc.x - pb.x;
+      dy = pc.y - pb.y;
+      float distCross = sqrt(dx*dx + dy*dy);
+      float xCross = dx/distCross;
+      float yCross = dy/distCross;
+
+      int nLanes = distCross/d + 1;
+      int nSteps = distDown/c;
+      float gap = distDown/nSteps;
+
+      geometry_msgs::msg::Point wp = pa;
+      for(int j=0; j<=nLanes; ++j)
+      {
+        for(int k=0; k<=nSteps; ++k)
+        {
+          std::cout << "wp," << wp.x << "," << wp.y << "\n";
+          m_waypoints.push_back(wp);
+          wp.x += gap*xDown;
+          wp.y += gap*yDown;
+        }
+        std::cout << "wp," << wp.x << "," << wp.y << "\n";
+        m_waypoints.push_back(wp);
+        wp.x += d*xCross;
+        wp.y += d*yCross;
+        xDown = -xDown;
+        yDown = -yDown;
+      }
+    }
+    m_num_waypoints = m_waypoints.size();
+  } // end if use lanes mowing
   else // mow boundary, make more frequent waypoints
   {
     float offset_gamma = mow_inside_heading_offset;
@@ -205,7 +263,7 @@ m_update_pf_waypoint(false)
       {
         const geometry_msgs::msg::Point& p = bound1[bk];
         const geometry_msgs::msg::Point& n = (bk==(numKeyPts-1) ? bound1.front() : bound1[bk+1]);
-        m_waypoints.push_back(p);
+        //m_waypoints.push_back(p);
         std::cout << "keyPoint," << p.x << "," << p.y << "\n";
         if(isnan(p.y))
         {
