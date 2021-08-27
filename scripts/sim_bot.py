@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy, math, random
 import numpy as np
@@ -181,7 +181,7 @@ class SimBot():
                     dist = math.sqrt(dx**2+dy**2)
                     if(dist < 30.0):
                         obstacle_found = True
-                        for sub_theta_deg in range(-fov/2,fov/2+1,fov/nDet):
+                        for sub_theta_deg in range(int(-fov/2), int(fov/2+1), int(fov/nDet)):
                             if(abs(self.bot_rad+sub_theta_deg*3.14/180.0 - theta) < scan.angle_increment):
                                 scan.ranges.append(dist)
                             else:
