@@ -8,7 +8,7 @@ PotentialFields::PotentialFields() :
 	max_Fattr(2.0),
 	c_repel(100.0),
 	obs_d0(3.0),
-	obs_d_retreat(0.7),
+	obs_d_retreat(1.2),
 	alpha(0.01),
 	m_useLinear(false),
 	m_R1(1.0), m_R2(2.0), m_Kt(10.0),

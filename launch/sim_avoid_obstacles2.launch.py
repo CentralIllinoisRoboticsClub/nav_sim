@@ -40,13 +40,20 @@ def generate_launch_description():
                     {'path_step_size': 3},
                     {'waypoints_are_in_map_frame': True},
                     #{'x_coords':          [14.5, -7.5,  -7.5,  14.5]}, # behind garage
-                    #{'y_coords':          [-3.0, -3.0, -18.0,-18.0]},
+                    #{'y_coords':          [-7.5, -7.5, -18.0,-18.0]}, # should be -2.5
                     #{'x_coords':          [34.0,  34.0,  28.0, 28.0]}, # back eastside
-                    #{'y_coords':          [18.0, -10.0, -10.0, 18.0]},
-                    {'x_coords':          [14.5,  14.5, 29.0, 29.0]}, # back between trees
-                    {'y_coords':          [ 10.0, -7.5, -7.5, 10.0]},
-                    #{'x_coords':          [11.5, 11.5, 25.0, 25.0]}, # front between trees
-                    #{'y_coords':          [33.0, 45.0, 45.0, 33.0]},
+                    #{'y_coords':          [23.0, -10.0, -10.0, 23.0]},
+                    #{'x_coords':          [17.5,  17.5, 29.0, 29.0]}, # back between trees
+                    #{'y_coords':          [ 13.5, -4.0, -4.0, 13.5]},
+                    {'x_coords':          [12.6, 12.6, 25.0, 25.0]}, # front between trees
+                    {'y_coords':          [33.4, 45.0, 45.0, 33.4]},
+                    #{'x_coords':          [23.0, 23.0, 25.6, 25.6]}, # front east
+                    #{'y_coords':          [45.0, 35.0, 35.0, 45.0]},
+                    #{'x_coords':          [29.0, 29.0, 24.0, 24.0]}, # east side
+                    #{'y_coords':          [25.0, 14.0, 14.0, 25.0]},
+                    #{'x_coords':          [-9.4, -9.4, -6.4, -6.4]}, # west
+                    #{'y_coords':          [ 18.5,  40.0, 40.0, 18.5]},
+                    
                     #{'x_coords':          [36.0, 26.0,  26.0, 36.0]},
                     #{'y_coords':          [23.0, 23.0, 12.0, 12.0]},
                     #{'x_coords':          [14.0, 14.0,  23.0, 23.0]},
