@@ -84,7 +84,8 @@ AvoidObs::AvoidObs() :
     float Kw = declare_parameter("Kw", 1.5);
     float des_speed = declare_parameter("des_speed", 1.0);
     float min_omega = declare_parameter("min_omega", 0.5);
-    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega);
+    float d_retreat = declare_parameter("d_retreat", 1.2);
+    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega, d_retreat);
 
     scan_range = max_range_;
 
@@ -121,6 +122,9 @@ AvoidObs::AvoidObs() :
     goal_pose.orientation.w = 1.0;
     bot_pose.orientation.w = 1.0;
     bot_yaw = 0.0;
+
+    time_odom = now();
+    time_scan = now();
 
     //Potential Fields Obstacle Map for debugging
     pfObs.header = costmap.header;
@@ -348,6 +352,18 @@ void AvoidObs::update_plan()
 		geometry_msgs::msg::Twist cmd = pf.update_cmd(bot_yaw, update_wp);
 		//ROS_INFO("bot_yaw: %0.2f", bot_yaw);
 
+		double timeSinceOdom = (now() - time_odom).seconds();
+		double timeSinceScan = (now() - time_scan).seconds();
+		if(timeSinceOdom > 0.2 || timeSinceScan > 0.2)
+		{
+		  if(timeSinceOdom > 0.2)
+		  {
+		    RCLCPP_FATAL(get_logger(), "timeSinceOdom %.3f, timeSinceScan %.3f", timeSinceOdom, timeSinceScan);
+		  }
+		  cmd.linear.x = 0.0;
+		  cmd.angular.z = 0.0;
+		}
+
 		cmd_pub_->publish(cmd);
 		pf_obs_pub_->publish(pfObs);
 
@@ -383,6 +399,7 @@ void AvoidObs::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
 
 	pf.bot.x = bot_pose.position.x;
 	pf.bot.y = bot_pose.position.y;
+	time_odom = now();
 }
 
 void AvoidObs::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data)
@@ -394,6 +411,7 @@ void AvoidObs::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr dat
 
 void AvoidObs::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) //use a point cloud instead, use laser2pc.launch
 {
+  time_scan = now();
   //RCLCPP_WARN(get_logger(), "scanCallback");
   //ROS_INFO("NEW SCAN");
 	// Transform scan to map frame, clear and fill costmap

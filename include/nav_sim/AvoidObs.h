@@ -74,6 +74,7 @@ class AvoidObs: public rclcpp::Node
         geometry_msgs::msg::Pose bot_pose, goal_pose;
         geometry_msgs::msg::PoseStamped camera_cone_poseStamped, obs_cone_poseStamped;
         float bot_yaw;
+        rclcpp::Time time_odom, time_scan;
         
         std::shared_ptr<tf2_ros::TransformListener> listener;
         std::shared_ptr<tf2_ros::Buffer> tfBuffer;
