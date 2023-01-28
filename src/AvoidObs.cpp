@@ -76,6 +76,7 @@ AvoidObs::AvoidObs() :
 
     // Potential Fields Params
     bool useLinear = declare_parameter("useLinear", true);
+    bool useTan = declare_parameter("useTangent", true);
     float R1 = declare_parameter("R1", 1.0);
     float R2 = declare_parameter("R2", 2.0);
     float Kt = declare_parameter("Kt", 10.0);;
@@ -85,7 +86,8 @@ AvoidObs::AvoidObs() :
     float des_speed = declare_parameter("des_speed", 1.0);
     float min_omega = declare_parameter("min_omega", 0.5);
     float d_retreat = declare_parameter("d_retreat", 1.2);
-    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega, d_retreat);
+    RCLCPP_FATAL(get_logger(), "useTan: %d", useTan);
+    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega, d_retreat, useTan);
 
     scan_range = max_range_;
 

@@ -11,6 +11,7 @@ PotentialFields::PotentialFields() :
 	obs_d_retreat(1.2),
 	alpha(0.01),
 	m_useLinear(false),
+	m_useTan(false),
 	m_R1(1.0), m_R2(2.0), m_Kt(10.0),
 	m_gamma(M_PI/2), m_max_heading_error(M_PI/6),
 	m_Kw(1.5),
@@ -117,7 +118,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
   if(goal_dist < 0.7)
   {
     met_goal = true;
-    return vel;
+    //return vel;
   }
   g_unit_vec.x = gdx / goal_dist;
   g_unit_vec.y = gdy / goal_dist;
@@ -125,7 +126,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
   if(g_unit_vec.x == 0 && g_unit_vec.y == 0)
   {
     met_goal = true;
-    return vel;
+    //return vel;
   }
 
   geometry_msgs::msg::Vector3 t_unit_vec;
@@ -170,14 +171,18 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
     {
       reverse = true;
     }
-    t_unit_vec.x = -obs_unit_vec.y * mu;
-    t_unit_vec.y =  obs_unit_vec.x * mu;
-
-    dot = g_unit_vec.x * t_unit_vec.x + g_unit_vec.y * t_unit_vec.y;
-    if(dot < -0.5)
+    t_unit_vec = obs_unit_vec;
+    if(m_useTan)
     {
-      t_unit_vec.x = -t_unit_vec.x;
-      t_unit_vec.y = -t_unit_vec.y;
+      t_unit_vec.x = -obs_unit_vec.y * mu;
+      t_unit_vec.y =  obs_unit_vec.x * mu;
+
+      dot = g_unit_vec.x * t_unit_vec.x + g_unit_vec.y * t_unit_vec.y;
+      if(dot < -0.1)
+      {
+        t_unit_vec.x = -t_unit_vec.x;
+        t_unit_vec.y = -t_unit_vec.y;
+      }
     }
     float Ft = m_Kt * (m_R2 - min_obs_dist) / (m_R2 - m_R1);
 

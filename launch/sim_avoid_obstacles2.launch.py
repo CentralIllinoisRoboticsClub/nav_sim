@@ -20,8 +20,8 @@ def generate_launch_description():
                     {'valid_cone_to_wp_dist': 11.0},
                     {'near_path_dist': 1.0},
                     {'valid_end_of_path_dist': 5.0},
-                    {'desired_speed': 1.0},
-                    {'slow_speed': 0.4},
+                    {'desired_speed': 0.4},
+                    {'slow_speed': 0.3},
                     {'max_omega': 2.0},
                     {'max_fwd_heading_error_deg': 180.0},
                     {'search_time': 2.0},
@@ -39,25 +39,27 @@ def generate_launch_description():
                     {'bump_db_limit': 2},
                     {'path_step_size': 3},
                     {'waypoints_are_in_map_frame': True},
-                    #{'x_coords':          [14.5, -7.5,  -7.5,  14.5]}, # behind garage
-                    #{'y_coords':          [-4.0, -4.0, -18.0,-18.0]}, # should be -2.5
-                    #{'x_coords':          [34.0,  34.0,  28.0, 28.0]}, # back eastside
-                    #{'y_coords':          [23.0, -10.0, -10.0, 23.0]}, # should be 23.0
-                    #{'x_coords':          [17.5,  17.5, 29.0, 29.0]}, # back between trees
-                    #{'y_coords':          [ 13.5, -4.0, -4.0, 13.5]},
-                    {'x_coords':          [11.6, 11.6, 25.0, 25.0]}, # front between trees
-                    {'y_coords':          [33.4, 45.0, 45.0, 33.4]},
-                    #{'x_coords':          [23.0, 23.0, 25.6, 25.6]}, # front east
-                    #{'y_coords':          [45.0, 35.0, 35.0, 45.0]},
-                    #{'x_coords':          [29.0, 29.0, 24.0, 24.0]}, # east side
-                    #{'y_coords':          [25.0, 14.0, 14.0, 25.0]},
-                    #{'x_coords':          [-9.4, -9.4, -6.4, -6.4]}, # west
-                    #{'y_coords':          [ 18.5,  40.0, 40.0, 18.5]},
+                    #{'x_coords':          [15.0, -6.0,  -6.0,  15.0]}, # behind garage ***LATEST
+                    #{'y_coords':          [-5.0, -5.0, -22.0,-22.0]}, #-3.0
+                    #{'x_coords':          [15.0,  15.0, 28.0, 28.0]}, # back between trees, x1=15 x2=28***LATEST
+                    #{'y_coords':          [10.6, -8.0, -8.0, 10.6]}, #10.6 -8
+                    #{'x_coords':          [24.6, 24.6, 38.0, 38.0]}, # east close temp ***LATEST
+                    #{'y_coords':          [23.4, 11.0, 11.0, 23.4]},
+                    #{'x_coords':          [28.0, 28.0, 38.0, 38.0]}, # east side 29, 38 ***LATEST
+                    #{'y_coords':          [11.0, -21.0, -21.0, 11.0]}, # 23, -16
                     
-                    #{'x_coords':          [36.0, 26.0,  26.0, 36.0]},
-                    #{'y_coords':          [23.0, 23.0, 12.0, 12.0]},
-                    #{'x_coords':          [14.0, 14.0,  23.0, 23.0]},
-                    #{'y_coords':          [ 0.0, 10.0,  10.0,  0.0]},
+                    {'x_coords':          [-5.0, -5.0, -8.2, -8.2]}, # west ***LATEST
+                    {'y_coords':          [ 16.4,  38.0, 38.0, 16.4]},
+                    
+                    #{'x_coords':          [1.6, 24.6, 24.6, 1.6]}, # front between trees ***LATEST
+                    #{'y_coords':          [39.5, 39.5, 47.0, 47.0]},
+                    
+                    #{'x_coords':          [26.6, 12.0,  12.0,  26.6]}, # front south **LATEST
+                    #{'y_coords':          [31.6, 31.6, 39.0, 39.0]},
+                    
+                    #{'x_coords':          [32.0, 32.0, 38.0, 38.0]}, # east side temp
+                    #{'y_coords':          [11.0, -21.0, -21.0, 11.0]}, #
+                    
                     {'waypoint_types':     [0,   0,    0]},
                     {'hill_waypoint_list': [0,   0,    0]},
                     {'is_mow_boundary': True},
@@ -93,13 +95,14 @@ def generate_launch_description():
                     {'max_num_known_obstacles': 30},
                     {'known_obstacle_time_limit': 30.0},
                     {'useLinear': True},
+                    {'useTan': True},
                     {'R1': 1.5},
                     {'R2': 2.0},
                     {'Kt': 10.0},
                     {'offset_gamma': pi/2},
                     {'max_heading_error': pi/3},
                     {'Kw': 1.3},
-                    {'des_speed': 1.5},
+                    {'des_speed': 1.0},
                     {'min_omega': 0.5},
                     {'d_retreat': 1.7}
         ]

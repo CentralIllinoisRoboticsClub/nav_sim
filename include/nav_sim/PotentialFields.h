@@ -34,7 +34,7 @@ public:
 	geometry_msgs::msg::Twist update_cmd(float bot_yaw, bool& update_wp);
 
 	void setParams(bool useLinear, float R1, float R2, float Kt, float offset_gamma,
-	    float max_heading_error, float Kw, float des_speed, float min_omega, float d_retreat)
+	    float max_heading_error, float Kw, float des_speed, float min_omega, float d_retreat, bool useTan)
 	{
 	  m_useLinear = useLinear;
 	  m_R1 = R1;
@@ -46,6 +46,7 @@ public:
 	  m_des_speed = des_speed;
     m_min_omega = min_omega;
     obs_d_retreat = d_retreat;
+    m_useTan = useTan;
 	}
 
 private:
@@ -54,6 +55,7 @@ private:
 	float alpha;
 
 	bool m_useLinear;
+	bool m_useTan;
 	float m_R1, m_R2, m_Kt;
 	float m_gamma, m_max_heading_error;
 	float m_Kw;
