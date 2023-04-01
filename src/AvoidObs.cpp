@@ -43,7 +43,7 @@ AvoidObs::AvoidObs() :
 
     //Topic you want to subscribe
     scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::scanCallback, this, _1)); //receive laser scan
-    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&AvoidObs::odomCallback, this, _1));
+    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::odomCallback, this, _1));
 
     // "/move_base_simple/goal"
     goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("wp_goal", 10, std::bind(&AvoidObs::goalCallback, this, _1));
@@ -86,8 +86,9 @@ AvoidObs::AvoidObs() :
     float des_speed = declare_parameter("des_speed", 1.0);
     float min_omega = declare_parameter("min_omega", 0.5);
     float d_retreat = declare_parameter("d_retreat", 1.2);
+    float goal_thresh = declare_parameter("goal_thresh", 1.0);
     RCLCPP_FATAL(get_logger(), "useTan: %d", useTan);
-    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega, d_retreat, useTan);
+    pf.setParams(useLinear, R1, R2, Kt, offset_gamma, max_heading_error, Kw, des_speed, min_omega, d_retreat, goal_thresh, useTan);
 
     scan_range = max_range_;
 

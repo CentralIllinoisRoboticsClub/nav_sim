@@ -9,6 +9,7 @@ PotentialFields::PotentialFields() :
 	c_repel(100.0),
 	obs_d0(3.0),
 	obs_d_retreat(1.2),
+	m_goal_thresh_m(1.0),
 	alpha(0.01),
 	m_useLinear(false),
 	m_useTan(false),
@@ -56,7 +57,7 @@ geometry_msgs::msg::Twist PotentialFields::update_cmd(float bot_yaw, bool& updat
 		des_yaw = atan2(odom_vel.y, odom_vel.x);
 	}
 	float yaw_error = des_yaw - bot_yaw;
-	if(m_useLinear && goal_dist < 1.0 && (cos(yaw_error) < -0.5))
+	if(m_useLinear && goal_dist < m_goal_thresh_m && (cos(yaw_error) < -0.5)) // PARAMETER FOR goal_dist
 	{
 	  reverse = true;
 	  yaw_error += M_PI;
@@ -115,7 +116,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
   float gdx = goal.x - bot.x;
   float gdy = goal.y - bot.y;
   goal_dist = sqrt(gdx*gdx + gdy*gdy);
-  if(goal_dist < 0.7)
+  if(goal_dist < 0.7*m_goal_thresh_m) // PARAMETER FOR goal_dist
   {
     met_goal = true;
     //return vel;
@@ -143,7 +144,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_vxvy_mow(float bot_yaw, bool& r
     odx = obs.x - goal.x;
     ody = obs.y - goal.y;
     obs_dist = sqrt(odx*odx + ody*ody);
-    if(obs_dist < 1.0)
+    if(obs_dist < m_goal_thresh_m) // PARAMETER FOR goal_dist
     {
       met_goal = true;
       vel = g_unit_vec;
@@ -247,7 +248,7 @@ geometry_msgs::msg::Vector3 PotentialFields::get_Fattr()
 
 	float dx = goal.x - bot.x;
 	float dy = goal.y - bot.y;
-	if(fabs(dx) < 1 && fabs(dy) < 1)
+	if(fabs(dx) < m_goal_thresh_m && fabs(dy) < m_goal_thresh_m) // PARAMETER FOR goal_dist
 		return Fattr;
 
 	float ax = c_attr * dx;
