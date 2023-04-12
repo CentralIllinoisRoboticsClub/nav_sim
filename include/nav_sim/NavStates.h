@@ -23,6 +23,8 @@
 #include <memory>
 //#include <std_msgs/String.h>
 
+#include "my_interfaces/srv/set_int.hpp"
+
 class NavStates: public rclcpp::Node
 {
 public:
@@ -33,6 +35,7 @@ public:
   void update_states();
 
 private:
+  void update_mow_path();
   void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
   void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
   void clickedGoalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr data);
@@ -69,6 +72,8 @@ private:
   void retreat_from_cone();
   void update_target();
   void update_target(geometry_msgs::msg::PoseStamped target_pose);
+  void mow_area_callback(const my_interfaces::srv::SetInt::Request::SharedPtr request,
+      const my_interfaces::srv::SetInt::Response::SharedPtr response);
 
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::Twist> > cmd_pub_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped> > wp_goal_pub_;
@@ -91,6 +96,8 @@ private:
   std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > map_to_odom_update_sub_;
 
   std::shared_ptr<rclcpp::Subscription<std_msgs::msg::Int16> > pf_wp_update_sub_;
+
+  rclcpp::Service<my_interfaces::srv::SetInt>::SharedPtr mow_area_server_;
 
   geometry_msgs::msg::PoseStamped bot_pose, map_goal_pose, odom_goal_pose;
   geometry_msgs::msg::PoseStamped camera_cone_pose, obs_cone_pose, camera_cone_pose_in_map;
@@ -160,8 +167,9 @@ private:
     //int min_new_path_size;
   }params;
 
-  std::vector<double> x_coords;
-  std::vector<double> y_coords;
+  std::vector< std::vector<double> > x_coords;
+  std::vector< std::vector<double> > y_coords;
+  unsigned coords_index;
   std::vector<int64_t> waypoint_type_list;
   std::vector<int64_t> hill_wp_list;
   bool waypoints_are_in_map_frame;

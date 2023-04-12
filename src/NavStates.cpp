@@ -28,6 +28,7 @@
 #define WP_TYPE_CONE 1
 
 using std::placeholders::_1;
+using std::placeholders::_2;
 
 //Constructor
 NavStates::NavStates(const rclcpp::NodeOptions& node_options) :
@@ -79,7 +80,7 @@ m_update_pf_waypoint(false)
 
   //Topic you want to subscribe
   scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", 50, std::bind(&NavStates::scanCallback, this, _1)); //receive laser scan
-  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&NavStates::odomCallback, this, _1));
+  odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", rclcpp::SensorDataQoS(), std::bind(&NavStates::odomCallback, this, _1));
   clicked_goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("goal_pose", 1, std::bind(&NavStates::clickedGoalCallback, this, _1));
   cam_cone_pose_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("cam_cone_pose", 1, std::bind(&NavStates::camConeCallback, this, _1));
   obs_cone_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("obs_cone_pose", 1, std::bind(&NavStates::obsConeCallback, this, _1));
@@ -88,6 +89,9 @@ m_update_pf_waypoint(false)
   map_to_odom_update_sub_ = create_subscription<std_msgs::msg::Int16>("map_to_odom_update", 1, std::bind(&NavStates::mapToOdomUpdateCallback, this, _1));
   
   pf_wp_update_sub_ = create_subscription<std_msgs::msg::Int16>("pf_wp_update", 1, std::bind(&NavStates::pfWayPointUpdateCallback, this, _1));
+
+  mow_area_server_ = create_service<my_interfaces::srv::SetInt>(
+                "set_mow_area", std::bind(&NavStates::mow_area_callback, this, _1, _2) );
 
 
   params.plan_rate = declare_parameter("plan_rate_hz", 10.0);
@@ -114,13 +118,28 @@ m_update_pf_waypoint(false)
   params.bump_db_limit = declare_parameter("bump_db_limit",  2);
   params.path_step_size = declare_parameter("path_step_size",  3);
 
-
-  x_coords = declare_parameter("x_coords", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  std::vector<double> xvec, yvec;
+  xvec = declare_parameter("x_coords0", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  yvec = declare_parameter("y_coords0", std::vector<double>({5.0, 0.0}));
+  x_coords.push_back(xvec);
+  y_coords.push_back(yvec);
+  xvec = declare_parameter("x_coords1", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  yvec = declare_parameter("y_coords1", std::vector<double>({5.0, 0.0}));
+  x_coords.push_back(xvec);
+  y_coords.push_back(yvec);
+  xvec = declare_parameter("x_coords2", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  yvec = declare_parameter("y_coords2", std::vector<double>({5.0, 0.0}));
+  x_coords.push_back(xvec);
+  y_coords.push_back(yvec);
+  xvec = declare_parameter("x_coords3", std::vector<double>({5.0, 0.0})); //.as_double_array();
+  yvec = declare_parameter("y_coords3", std::vector<double>({5.0, 0.0}));
+  x_coords.push_back(xvec);
+  y_coords.push_back(yvec);
+  coords_index = 0;
   //rclcpp::Parameter double_array_param = get_parameter("x_coords");
   //x_coords = double_array_param.as_double_array();
   //x_coords = declare_parameter<std::vector<double> >("x_coords");
   //y_coords = declare_parameter<std::vector<double> >("y_coords");
-  y_coords = declare_parameter("y_coords", std::vector<double>({5.0, 0.0}));
   //double_array_param = get_parameter("y_coords");
   //y_coords = double_array_param.as_double_array();
   
@@ -168,14 +187,37 @@ m_update_pf_waypoint(false)
   camera_cone_pose.pose.orientation.w = 1.0;
   obs_cone_pose.pose.orientation.w = 1.0;
 
+  update_mow_path();
+  update_waypoint();
+
+  m_state = STATE_TRACK_PATH;
+  if(is_mow_boundary)
+  {
+    RCLCPP_INFO(get_logger(), "MOW BOUNDARY");
+    m_state = STATE_TRACK_MOW_PATH;
+  }
+
+  state_init();
+
+  RCLCPP_INFO(get_logger(), "Initialized Navigation State Manager");
+
+  //std::chrono::milliseconds period_msec = (int)(1000.0/get_plan_rate());
+  //timer_ = rclcpp::create_wall_timer(std::chrono::milliseconds, std::bind(&NavStates::update_states, this) );
+}
+
+void NavStates::update_mow_path()
+{
   bool use_lanes = true;
+  const std::vector<double>& xc = x_coords[coords_index];
+  const std::vector<double>& yc = y_coords[coords_index];
 
   if(!is_mow_boundary)
   {
-    m_num_waypoints = x_coords.size();
+    m_waypoints.clear();
+    m_num_waypoints = xc.size();
     for(unsigned k=0; k<m_num_waypoints; ++k)
     {
-      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      geometry_msgs::msg::Point wp; wp.x = xc[k]; wp.y = yc[k];
       m_waypoints.push_back(wp);
     }
     m_index_wp = 0;
@@ -185,10 +227,10 @@ m_update_pf_waypoint(false)
     std::vector<geometry_msgs::msg::Point> bound1;
     bound1.clear();
     m_waypoints.clear();
-    unsigned numKeyPts = x_coords.size();
+    unsigned numKeyPts = xc.size();
     for(unsigned k=0; k<numKeyPts; ++k)
     {
-      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      geometry_msgs::msg::Point wp; wp.x = xc[k]; wp.y = yc[k];
       m_waypoints.push_back(wp);
       bound1.push_back(wp);
     }
@@ -241,10 +283,10 @@ m_update_pf_waypoint(false)
     float offset_gamma = mow_inside_heading_offset;
     std::vector<geometry_msgs::msg::Point> bound1, bound2, bound_offset;
     bound1.clear(); bound2.clear(); bound_offset.clear();
-    unsigned numKeyPts = x_coords.size();
+    unsigned numKeyPts = xc.size();
     for(unsigned k=0; k<numKeyPts; ++k)
     {
-      geometry_msgs::msg::Point wp; wp.x = x_coords[k]; wp.y = y_coords[k];
+      geometry_msgs::msg::Point wp; wp.x = xc[k]; wp.y = yc[k];
       bound1.push_back(wp);
     }
 
@@ -348,22 +390,6 @@ m_update_pf_waypoint(false)
 
     m_num_waypoints = m_waypoints.size();
   } // end if mow boundary
-
-  update_waypoint();
-
-  m_state = STATE_TRACK_PATH;
-  if(is_mow_boundary)
-  {
-    RCLCPP_INFO(get_logger(), "MOW BOUNDARY");
-    m_state = STATE_TRACK_MOW_PATH;
-  }
-
-  state_init();
-
-  RCLCPP_INFO(get_logger(), "Initialized Navigation State Manager");
-  
-  //std::chrono::milliseconds period_msec = (int)(1000.0/get_plan_rate());
-  //timer_ = rclcpp::create_wall_timer(std::chrono::milliseconds, std::bind(&NavStates::update_states, this) );
 }
 
 void NavStates::update_waypoint()
@@ -902,6 +928,22 @@ void NavStates::update_target()
 void NavStates::update_target(geometry_msgs::msg::PoseStamped target_pose)
 {
   wp_goal_pub_->publish(target_pose);
+}
+
+void NavStates::mow_area_callback(const my_interfaces::srv::SetInt::Request::SharedPtr request,
+    const my_interfaces::srv::SetInt::Response::SharedPtr response)
+{
+  response->success = true;
+  if(0 <= request->data && request->data <= 3)
+  {
+    coords_index = request->data;
+    update_mow_path();
+    update_waypoint();
+  }
+  else
+  {
+    response->success = false;
+  }
 }
 
 void NavStates::update_states()
