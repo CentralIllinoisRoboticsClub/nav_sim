@@ -211,6 +211,10 @@ void NavStates::update_mow_path()
   const std::vector<double>& xc = x_coords[coords_index];
   const std::vector<double>& yc = y_coords[coords_index];
 
+  // TODO: index vec for each mow area?
+  // TODO: save and load index to/from file ?
+  m_index_wp = 0;
+
   if(!is_mow_boundary)
   {
     m_waypoints.clear();
@@ -220,7 +224,6 @@ void NavStates::update_mow_path()
       geometry_msgs::msg::Point wp; wp.x = xc[k]; wp.y = yc[k];
       m_waypoints.push_back(wp);
     }
-    m_index_wp = 0;
   }
   else if(use_lanes)
   {

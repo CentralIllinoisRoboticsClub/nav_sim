@@ -39,20 +39,27 @@ def generate_launch_description():
                     {'bump_db_limit': 2},
                     {'path_step_size': 3},
                     {'waypoints_are_in_map_frame': True},
-                    {'x_coords0':          [15.0, -6.0,  -6.0,  15.0]}, # behind garage ***LATEST
-                    {'y_coords0':          [-5.0, -5.0, -22.0,-22.0]}, #-3.0
-                    {'x_coords1':          [15.0,  15.0, 28.0, 28.0]}, # back between trees, x1=15 x2=28***LATEST
-                    {'y_coords1':          [10.6, -8.0, -8.0, 10.6]}, #10.6 -8
+                    {'x_coords0':          [27.2, 27.2,  37.6,  37.6]}, # SELECT, east side
+                    {'y_coords0':          [24.0, -13.0, -13.0, 24.0]}, # 22 to -10
+                    {'x_coords1':          [24.0,  11.0, 11.0, 24.0]}, # SQUARE, front south
+                    {'y_coords1':          [30.6, 30.6, 39.0, 39.0]},
+                    
+                    #{'x_coords0':          [15.0, -6.0,  -6.0,  15.0]}, # behind garage ***LATEST, SELECT
+                    #{'y_coords0':          [-5.0, -5.0, -22.0,-22.0]}, #-3.0
+                    #{'x_coords1':          [15.6,  15.6, 28.0, 28.0]}, # back between trees, x1=15 x2=28***LATEST, SQUARE
+                    #{'y_coords1':          [10.6, -8.0, -8.0, 10.6]}, #10.6 -8
                     #{'x_coords':          [24.6, 24.6, 38.0, 38.0]}, # east close temp ***LATEST
                     #{'y_coords':          [23.4, 11.0, 11.0, 23.4]},
                     #{'x_coords':          [28.0, 28.0, 38.0, 38.0]}, # east side 29, 38 ***LATEST
                     #{'y_coords':          [11.0, -21.0, -21.0, 11.0]}, # 23, -16
                     
-                    {'x_coords2':          [-5.0, -5.0, -8.2, -8.2]}, # west ***LATEST
-                    {'y_coords2':          [ 16.4,  38.0, 38.0, 16.4]},
+                    {'x_coords2':          [-4.2, -4.2, -9.8, -9.8]}, # west ***LATEST, TRIANGLE
+                    {'y_coords2':          [ 16.4,  45.0, 45.0, 16.4]},
+                    #{'x_coords2':          [35.0, 35.0, 24.5, 24.5]}, # east close to AC
+                    #{'y_coords2':          [25.0, 12.0, 12.0, 25.0]},
                     
-                    {'x_coords3':          [1.6, 24.6, 24.6, 1.6]}, # front between trees ***LATEST
-                    {'y_coords3':          [39.5, 39.5, 47.0, 47.0]},
+                    {'x_coords3':          [0.6, 27.4, 27.4, 0.6]}, # front between trees ***LATEST, CIRCLE
+                    {'y_coords3':          [39.0, 39.0, 45.6, 45.6]},
                     
                     #{'x_coords':          [26.6, 12.0,  12.0,  26.6]}, # front south **LATEST
                     #{'y_coords':          [31.6, 31.6, 39.0, 39.0]},
