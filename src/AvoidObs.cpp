@@ -43,7 +43,7 @@ AvoidObs::AvoidObs() :
 
     //Topic you want to subscribe
     scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>("scan", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::scanCallback, this, _1)); //receive laser scan
-    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", rclcpp::SensorDataQoS(), std::bind(&AvoidObs::odomCallback, this, _1));
+    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>("odom", 10, std::bind(&AvoidObs::odomCallback, this, _1));
 
     // "/move_base_simple/goal"
     goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>("wp_goal", 10, std::bind(&AvoidObs::goalCallback, this, _1));

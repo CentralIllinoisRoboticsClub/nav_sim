@@ -131,7 +131,7 @@ def generate_launch_description():
     ld.add_action(load_map_node)
     ld.add_action(static_laser_tf_node)
     ld.add_action(static_map_tf_node)
-    ld.add_action(rviz_node)
+    #ld.add_action(rviz_node)
     ld.add_action(map_node)
     ld.add_action(configure_map_event)
     ld.add_action(activate_map_event)
