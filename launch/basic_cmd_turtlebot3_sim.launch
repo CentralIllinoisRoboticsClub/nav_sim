@@ -1,0 +1,9 @@
+<launch>
+  <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_house.launch" />
+  <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" />
+  <param name="slam_methods" value="gmapping"/>
+   
+  <node pkg="nav_sim" type = "cmd_bot.py" name = "cmd_bot" />
+
+
+</launch>
