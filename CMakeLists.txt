@@ -11,7 +11,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 
-ament_python_install_package(nav_sim/)
+ament_python_install_package(nav_sim)
 
 ament_auto_find_build_dependencies()
 

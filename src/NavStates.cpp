@@ -160,8 +160,8 @@ m_update_pf_waypoint(false)
   //listener.waitForTransform("laser", "odom", rclcpp::Time(0), ros::Duration(10.0)); //TODO: rclcpp::Time(0) or ::now() ??
   //listener.waitForTransform("base_link", "odom", rclcpp::Time(0), ros::Duration(10.0));
   try{
-    tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
-    tfBuffer->lookupTransform("base_link", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+    tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10, 0));
+    tfBuffer->lookupTransform("base_link", "odom", rclcpp::Time(0), rclcpp::Duration(10, 0));
   } catch (tf2::TransformException &ex) {
     RCLCPP_WARN(get_logger(), "NavStates: %s",ex.what());
   }
@@ -591,12 +591,14 @@ void NavStates::bumpCallback(const std_msgs::msg::Int16::SharedPtr msg)
 
 void NavStates::mapToOdomUpdateCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
+  RCLCPP_DEBUG(get_logger(), "mapToOdomUpdate %d", msg->data);
   m_odom_goal_refresh_needed = true;
   camera_cone_pose_in_map.header.stamp = now();
 }
 
 void NavStates::pfWayPointUpdateCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
+  RCLCPP_DEBUG(get_logger(), "pfWayPointUpdate %d", msg->data);
   if(m_init_wp_published)
     m_update_pf_waypoint = true;
 }
@@ -636,10 +638,10 @@ void NavStates::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) 
   // TODO: Also calculate a close_obs_range to control m_speed in commandTo instead of using distance_between_poses
   //       Set a boolean here, m_close_to_obs = close_obs_range < params.slow_approach_distance
   double close_obs_range = DBL_MAX;
-  for (int i = 0; i < scan->ranges.size();i++)
+  for (unsigned i = 0; i < scan->ranges.size();i++)
   {
     float range = scan->ranges[i];
-    float angle  = scan->angle_min +(float(i) * scan->angle_increment);
+    //float angle  = scan->angle_min +(float(i) * scan->angle_increment);
     if(range < params.scan_collision_range)
     {
       ++close_count;

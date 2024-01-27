@@ -15,7 +15,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/point.hpp>
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <std_msgs/msg/int16.hpp>
@@ -118,7 +118,7 @@ private:
   bool m_first_search;
   bool m_valid_bump;
   int m_bump_switch;
-  int m_bump_count;
+  unsigned m_bump_count;
   unsigned m_num_waypoints, m_index_wp;
   int m_state;
   unsigned m_index_path;
@@ -154,15 +154,15 @@ private:
     double search_omega;
     double reverse_time;
     int cmd_control_ver;
-    int scan_collision_db_limit;
+    unsigned scan_collision_db_limit;
     double scan_collision_range;
-    int cone_detect_db_limit;
+    unsigned cone_detect_db_limit;
     double cmd_speed_filter_factor;
     bool report_bumped_obstacles;
     double max_camera_search_time;
     double slow_approach_distance;
     double reverse_speed;
-    int bump_db_limit;
+    unsigned bump_db_limit;
     int path_step_size;
     //int min_new_path_size;
   }params;

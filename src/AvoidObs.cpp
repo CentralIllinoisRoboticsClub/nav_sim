@@ -100,7 +100,7 @@ AvoidObs::AvoidObs() :
     //listener.setExtrapolationLimit(ros::Duration(0.1));
     //listener.waitForTransform("laser", "odom", ros::Time(0), ros::Duration(10.0));
     try{
-      tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10.0));
+      tfBuffer->lookupTransform("laser", "odom", rclcpp::Time(0), rclcpp::Duration(10, 0));
     } catch (tf2::TransformException &ex) {
       RCLCPP_WARN(get_logger(), "AvoidObs: %s",ex.what());
     }
