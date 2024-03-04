@@ -60,8 +60,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='static_laser_tf',
         arguments=['0', '0', '0.3', '0', '0', '0', 'base_link', 'laser']
-    )
-    
+    )    
     static_map_tf_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -84,6 +83,7 @@ def generate_launch_description():
     # https://index.ros.org/p/nav2_map_server/
     map_node = LifecycleNode(
         package = 'nav2_map_server',
+        namespace = '',
         executable='map_server',
         name='map_server',
         parameters=[
@@ -131,7 +131,7 @@ def generate_launch_description():
     ld.add_action(load_map_node)
     ld.add_action(static_laser_tf_node)
     ld.add_action(static_map_tf_node)
-    #ld.add_action(rviz_node)
+    ld.add_action(rviz_node)
     ld.add_action(map_node)
     ld.add_action(configure_map_event)
     ld.add_action(activate_map_event)
